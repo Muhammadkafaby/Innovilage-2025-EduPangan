@@ -1,0 +1,39 @@
+{
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  },
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read(./**)",
+      "Write(./**)",
+      "Edit(./**)",
+      "Glob(./**)",
+      "Grep(./**)",
+      "Read(C:\\Users\\muham\\OneDrive\\Desktop\\Karya\\protoype-innovilage\\edupangan-ui\\.auto-claude\\worktrees\\tasks\\001-migrasi-ke-flutter-mobile-untuk-ui-nya/**)",
+      "Write(C:\\Users\\muham\\OneDrive\\Desktop\\Karya\\protoype-innovilage\\edupangan-ui\\.auto-claude\\worktrees\\tasks\\001-migrasi-ke-flutter-mobile-untuk-ui-nya/**)",
+      "Edit(C:\\Users\\muham\\OneDrive\\Desktop\\Karya\\protoype-innovilage\\edupangan-ui\\.auto-claude\\worktrees\\tasks\\001-migrasi-ke-flutter-mobile-untuk-ui-nya/**)",
+      "Glob(C:\\Users\\muham\\OneDrive\\Desktop\\Karya\\protoype-innovilage\\edupangan-ui\\.auto-claude\\worktrees\\tasks\\001-migrasi-ke-flutter-mobile-untuk-ui-nya/**)",
+      "Grep(C:\\Users\\muham\\OneDrive\\Desktop\\Karya\\protoype-innovilage\\edupangan-ui\\.auto-claude\\worktrees\\tasks\\001-migrasi-ke-flutter-mobile-untuk-ui-nya/**)",
+      "Read(C:\\Users\\muham\\OneDrive\\Desktop\\Karya\\protoype-innovilage\\edupangan-ui\\.auto-claude\\worktrees\\tasks\\001-migrasi-ke-flutter-mobile-untuk-ui-nya\\.auto-claude\\specs\\001-migrasi-ke-flutter-mobile-untuk-ui-nya/**)",
+      "Write(C:\\Users\\muham\\OneDrive\\Desktop\\Karya\\protoype-innovilage\\edupangan-ui\\.auto-claude\\worktrees\\tasks\\001-migrasi-ke-flutter-mobile-untuk-ui-nya\\.auto-claude\\specs\\001-migrasi-ke-flutter-mobile-untuk-ui-nya/**)",
+      "Edit(C:\\Users\\muham\\OneDrive\\Desktop\\Karya\\protoype-innovilage\\edupangan-ui\\.auto-claude\\worktrees\\tasks\\001-migrasi-ke-flutter-mobile-untuk-ui-nya\\.auto-claude\\specs\\001-migrasi-ke-flutter-mobile-untuk-ui-nya/**)",
+      "Read(C:\\Users\\muham\\OneDrive\\Desktop\\Karya\\protoype-innovilage\\edupangan-ui\\.auto-claude/**)",
+      "Write(C:\\Users\\muham\\OneDrive\\Desktop\\Karya\\protoype-innovilage\\edupangan-ui\\.auto-claude/**)",
+      "Edit(C:\\Users\\muham\\OneDrive\\Desktop\\Karya\\protoype-innovilage\\edupangan-ui\\.auto-claude/**)",
+      "Glob(C:\\Users\\muham\\OneDrive\\Desktop\\Karya\\protoype-innovilage\\edupangan-ui\\.auto-claude/**)",
+      "Grep(C:\\Users\\muham\\OneDrive\\Desktop\\Karya\\protoype-innovilage\\edupangan-ui\\.auto-claude/**)",
+      "Bash(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "mcp__context7__resolve-library-id(*)",
+      "mcp__context7__get-library-docs(*)",
+      "mcp__graphiti-memory__search_nodes(*)",
+      "mcp__graphiti-memory__search_facts(*)",
+      "mcp__graphiti-memory__add_episode(*)",
+      "mcp__graphiti-memory__get_episodes(*)",
+      "mcp__graphiti-memory__get_entity_edge(*)"
+    ]
+  }
+}

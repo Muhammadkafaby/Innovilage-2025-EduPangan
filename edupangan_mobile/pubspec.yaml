@@ -1,0 +1,42 @@
+name: edupangan_mobile
+description: EduPangan - Smart Food Village mobile application for Indramayu
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+  flutter: '>=3.19.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+
+  # Routing
+  go_router: ^14.0.0
+
+  # HTTP Client (for future API integration)
+  dio: ^5.4.0
+
+  # Local Storage
+  shared_preferences: ^2.2.0
+
+  # Typography
+  google_fonts: ^6.1.0
+
+  # Cupertino Icons
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
