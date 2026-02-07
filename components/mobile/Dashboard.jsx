@@ -10,7 +10,7 @@ import { dashboardStats, gardenActivities, notifications } from '../../data/dumm
  * - Notifikasi
  * - Bottom Navigation
  */
-const Dashboard = ({ user, onNavigate }) => {
+const Dashboard = ({ user, onNavigate, onLogout }) => {
   const [activeTab, setActiveTab] = useState('home');
 
   // Mock user garden data
@@ -34,8 +34,8 @@ const Dashboard = ({ user, onNavigate }) => {
         {/* Top Bar */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <p className="text-green-100 text-sm">Selamat Datang,</p>
-            <h2 className="text-white text-xl font-bold">{user?.name || 'Ibu Siti'}</h2>
+            <p className="text-green-100 text-sm">Device: Telyuk_{user?.deviceId || '001'}</p>
+            <h2 className="text-white text-xl font-bold">Smart Watering</h2>
           </div>
           <button
             onClick={() => onNavigate('notifications')}
@@ -77,14 +77,24 @@ const Dashboard = ({ user, onNavigate }) => {
         {/* Quick Actions */}
         <div className="bg-white rounded-2xl shadow-lg p-5">
           <h3 className="font-bold text-gray-800 mb-4 text-sm">Aksi Cepat</h3>
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-5 gap-2">
+            <button
+              onClick={() => onNavigate('device-monitor')}
+              className="flex flex-col items-center space-y-2 p-3 bg-blue-100 rounded-xl hover:bg-blue-200 transition-colors active:scale-95 border-2 border-blue-300"
+            >
+              <span className="text-2xl">📡</span>
+              <span className="text-xs font-medium text-blue-700 text-center">
+                IoT
+              </span>
+            </button>
+
             <button
               onClick={() => onNavigate('catat-panen')}
               className="flex flex-col items-center space-y-2 p-3 bg-green-50 rounded-xl hover:bg-green-100 transition-colors active:scale-95"
             >
-              <span className="text-3xl">📝</span>
+              <span className="text-2xl">📝</span>
               <span className="text-xs font-medium text-gray-700 text-center">
-                Catat<br />Panen
+                Panen
               </span>
             </button>
 
@@ -92,9 +102,9 @@ const Dashboard = ({ user, onNavigate }) => {
               onClick={() => onNavigate('bank-bibit')}
               className="flex flex-col items-center space-y-2 p-3 bg-yellow-50 rounded-xl hover:bg-yellow-100 transition-colors active:scale-95"
             >
-              <span className="text-3xl">🌾</span>
+              <span className="text-2xl">🌾</span>
               <span className="text-xs font-medium text-gray-700 text-center">
-                Bank<br />Bibit
+                Bibit
               </span>
             </button>
 
@@ -102,19 +112,19 @@ const Dashboard = ({ user, onNavigate }) => {
               onClick={() => onNavigate('menu-gizi')}
               className="flex flex-col items-center space-y-2 p-3 bg-orange-50 rounded-xl hover:bg-orange-100 transition-colors active:scale-95"
             >
-              <span className="text-3xl">🍽️</span>
+              <span className="text-2xl">🍽️</span>
               <span className="text-xs font-medium text-gray-700 text-center">
-                Menu<br />Gizi
+                Gizi
               </span>
             </button>
 
             <button
               onClick={() => onNavigate('edukasi')}
-              className="flex flex-col items-center space-y-2 p-3 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors active:scale-95"
+              className="flex flex-col items-center space-y-2 p-3 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors active:scale-95"
             >
-              <span className="text-3xl">📚</span>
+              <span className="text-2xl">📚</span>
               <span className="text-xs font-medium text-gray-700 text-center">
-                Edukasi
+                Edu
               </span>
             </button>
           </div>
@@ -270,9 +280,8 @@ const Dashboard = ({ user, onNavigate }) => {
         <div className="flex justify-around items-center">
           <button
             onClick={() => setActiveTab('home')}
-            className={`flex flex-col items-center space-y-1 ${
-              activeTab === 'home' ? 'text-green-600' : 'text-gray-400'
-            }`}
+            className={`flex flex-col items-center space-y-1 ${activeTab === 'home' ? 'text-green-600' : 'text-gray-400'
+              }`}
           >
             <span className="text-2xl">🏠</span>
             <span className="text-xs font-medium">Beranda</span>
@@ -283,9 +292,8 @@ const Dashboard = ({ user, onNavigate }) => {
               setActiveTab('kebun');
               onNavigate('kebun');
             }}
-            className={`flex flex-col items-center space-y-1 ${
-              activeTab === 'kebun' ? 'text-green-600' : 'text-gray-400'
-            }`}
+            className={`flex flex-col items-center space-y-1 ${activeTab === 'kebun' ? 'text-green-600' : 'text-gray-400'
+              }`}
           >
             <span className="text-2xl">🌱</span>
             <span className="text-xs font-medium">Kebun</span>
@@ -296,9 +304,8 @@ const Dashboard = ({ user, onNavigate }) => {
               setActiveTab('bank-bibit');
               onNavigate('bank-bibit');
             }}
-            className={`flex flex-col items-center space-y-1 ${
-              activeTab === 'bank-bibit' ? 'text-green-600' : 'text-gray-400'
-            }`}
+            className={`flex flex-col items-center space-y-1 ${activeTab === 'bank-bibit' ? 'text-green-600' : 'text-gray-400'
+              }`}
           >
             <span className="text-2xl">🌾</span>
             <span className="text-xs font-medium">Bibit</span>
@@ -309,9 +316,8 @@ const Dashboard = ({ user, onNavigate }) => {
               setActiveTab('edukasi');
               onNavigate('edukasi');
             }}
-            className={`flex flex-col items-center space-y-1 ${
-              activeTab === 'edukasi' ? 'text-green-600' : 'text-gray-400'
-            }`}
+            className={`flex flex-col items-center space-y-1 ${activeTab === 'edukasi' ? 'text-green-600' : 'text-gray-400'
+              }`}
           >
             <span className="text-2xl">📚</span>
             <span className="text-xs font-medium">Edukasi</span>
@@ -322,9 +328,8 @@ const Dashboard = ({ user, onNavigate }) => {
               setActiveTab('profil');
               onNavigate('profil');
             }}
-            className={`flex flex-col items-center space-y-1 ${
-              activeTab === 'profil' ? 'text-green-600' : 'text-gray-400'
-            }`}
+            className={`flex flex-col items-center space-y-1 ${activeTab === 'profil' ? 'text-green-600' : 'text-gray-400'
+              }`}
           >
             <span className="text-2xl">👤</span>
             <span className="text-xs font-medium">Profil</span>

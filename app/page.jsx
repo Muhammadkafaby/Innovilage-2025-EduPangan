@@ -9,10 +9,11 @@ import BankBibit from '../components/mobile/BankBibit';
 import CatatPanen from '../components/mobile/CatatPanen';
 import MenuGizi from '../components/mobile/MenuGizi';
 import Edukasi from '../components/mobile/Edukasi';
+import DeviceMonitor from '../components/mobile/DeviceMonitor';
 
 /**
  * Main App Component
- * Demo application untuk EduPangan UI Components
+ * EduPangan + Smart Watering System dengan MQTT
  */
 export default function Home() {
   const [currentPage, setCurrentPage] = useState('splash');
@@ -24,11 +25,14 @@ export default function Home() {
 
   const handleLogin = (credentials) => {
     console.log('Login:', credentials);
-    // Simulasi login
+    // Set user with device info from MQTT credentials
     setUser({
-      name: 'Ibu Siti Aminah',
-      rw: '02',
-      phone: credentials.phoneNumber,
+      name: `Device ${credentials.deviceId}`,
+      deviceNumber: credentials.deviceNumber,
+      deviceId: credentials.deviceId,
+      username: credentials.username,
+      password: credentials.password,
+      rw: '01', // Default RW for demo
     });
     navigate('dashboard');
   };
@@ -56,6 +60,11 @@ export default function Home() {
     navigate('dashboard');
   };
 
+  const handleLogout = () => {
+    setUser(null);
+    navigate('login');
+  };
+
   return (
     <div className="max-w-md mx-auto bg-white min-h-screen">
       {currentPage === 'splash' && (
@@ -77,7 +86,7 @@ export default function Home() {
       )}
 
       {currentPage === 'dashboard' && (
-        <Dashboard user={user} onNavigate={navigate} />
+        <Dashboard user={user} onNavigate={navigate} onLogout={handleLogout} />
       )}
 
       {currentPage === 'bank-bibit' && (
@@ -103,6 +112,13 @@ export default function Home() {
 
       {currentPage === 'edukasi' && (
         <Edukasi onNavigateBack={() => navigate('dashboard')} />
+      )}
+
+      {currentPage === 'device-monitor' && (
+        <DeviceMonitor
+          user={user}
+          onNavigateBack={() => navigate('dashboard')}
+        />
       )}
     </div>
   );
