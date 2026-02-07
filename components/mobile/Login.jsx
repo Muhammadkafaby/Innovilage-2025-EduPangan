@@ -8,6 +8,7 @@ import { getDeviceOptions, getDeviceCredentials } from '../../lib/mqttConfig';
  */
 const Login = ({ onLogin, onNavigateToRegister }) => {
   const [selectedDevice, setSelectedDevice] = useState('');
+  const [userName, setUserName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -22,6 +23,11 @@ const Login = ({ onLogin, onNavigateToRegister }) => {
       return;
     }
 
+    if (!userName.trim()) {
+      setError('Masukkan nama Anda');
+      return;
+    }
+
     setIsLoading(true);
 
     // Get MQTT credentials for the selected device
@@ -31,6 +37,7 @@ const Login = ({ onLogin, onNavigateToRegister }) => {
     setTimeout(() => {
       setIsLoading(false);
       onLogin && onLogin({
+        name: userName.trim(),
         deviceNumber: parseInt(selectedDevice),
         deviceId: credentials.deviceId,
         username: credentials.username,
@@ -64,6 +71,24 @@ const Login = ({ onLogin, onNavigateToRegister }) => {
       <div className="flex-1 px-6 -mt-16">
         <div className="bg-white rounded-2xl shadow-xl p-6">
           <form onSubmit={handleLogin} className="space-y-5">
+            {/* User Name Input */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Nama Anda
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-3.5 text-gray-400">👩</span>
+                <input
+                  type="text"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  placeholder="Contoh: Ibu Siti Aminah"
+                  className="w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none text-gray-800"
+                  required
+                />
+              </div>
+            </div>
+
             {/* Device Selection */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -88,23 +113,6 @@ const Login = ({ onLogin, onNavigateToRegister }) => {
               </div>
             </div>
 
-            {/* Auto-generated Credentials Display */}
-            {selectedCredentials && (
-              <div className="bg-gray-50 rounded-xl p-4 border-2 border-gray-100">
-                <p className="text-xs text-gray-500 mb-2">Kredensial MQTT (otomatis):</p>
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <span className="text-gray-400 mr-2">👤</span>
-                    <span className="text-sm font-mono text-gray-700">{selectedCredentials.username}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-gray-400 mr-2">🔒</span>
-                    <span className="text-sm font-mono text-gray-700">{selectedCredentials.password}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Error Message */}
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
@@ -115,10 +123,10 @@ const Login = ({ onLogin, onNavigateToRegister }) => {
             {/* Login Button */}
             <button
               type="submit"
-              disabled={isLoading || !selectedDevice}
-              className={`w-full py-4 rounded-xl font-semibold text-white transition-all shadow-lg ${isLoading || !selectedDevice
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-green-500 hover:bg-green-600 active:scale-95'
+              disabled={isLoading || !selectedDevice || !userName.trim()}
+              className={`w-full py-4 rounded-xl font-semibold text-white transition-all shadow-lg ${isLoading || !selectedDevice || !userName.trim()
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-green-500 hover:bg-green-600 active:scale-95'
                 }`}
             >
               {isLoading ? (
@@ -149,19 +157,6 @@ const Login = ({ onLogin, onNavigateToRegister }) => {
               )}
             </button>
           </form>
-
-          {/* Divider */}
-          <div className="flex items-center my-6">
-            <div className="flex-1 border-t border-gray-300"></div>
-            <span className="px-4 text-gray-500 text-sm">info</span>
-            <div className="flex-1 border-t border-gray-300"></div>
-          </div>
-
-          {/* MQTT Info */}
-          <div className="text-center text-xs text-gray-500 space-y-1">
-            <p>MQTT Broker: EMQX Cloud</p>
-            <p>Protocol: WSS (WebSocket Secure)</p>
-          </div>
         </div>
 
         {/* Info Box */}

@@ -11,6 +11,7 @@ import MenuGizi from '../components/mobile/MenuGizi';
 import Edukasi from '../components/mobile/Edukasi';
 import DeviceMonitor from '../components/mobile/DeviceMonitor';
 import KebunSaya from '../components/mobile/KebunSaya';
+import Profil from '../components/mobile/Profil';
 
 /**
  * Main App Component
@@ -26,9 +27,9 @@ export default function Home() {
 
   const handleLogin = (credentials) => {
     console.log('Login:', credentials);
-    // Set user with device info from MQTT credentials
+    // Set user with name and device info from MQTT credentials
     setUser({
-      name: `Device ${credentials.deviceId}`,
+      name: credentials.name,
       deviceNumber: credentials.deviceNumber,
       deviceId: credentials.deviceId,
       username: credentials.username,
@@ -125,6 +126,15 @@ export default function Home() {
       {currentPage === 'kebun' && (
         <KebunSaya
           onNavigateBack={() => navigate('dashboard')}
+          onNavigate={navigate}
+        />
+      )}
+
+      {currentPage === 'profil' && (
+        <Profil
+          user={user}
+          onNavigateBack={() => navigate('dashboard')}
+          onLogout={handleLogout}
           onNavigate={navigate}
         />
       )}
