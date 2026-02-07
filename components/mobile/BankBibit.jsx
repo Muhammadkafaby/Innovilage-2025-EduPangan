@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { vegetables } from '../../data/dummyData';
+import { vegetables } from '../../data/staticData';
 
 /**
  * Bank Bibit Component
@@ -77,13 +77,12 @@ const BankBibit = ({ onNavigateBack, onOrder }) => {
                   {selectedVegetable.name}
                 </h2>
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    selectedVegetable.stockAvailable > 100
+                  className={`px-3 py-1 rounded-full text-xs font-semibold ${selectedVegetable.stockAvailable > 100
                       ? 'bg-green-100 text-green-700'
                       : selectedVegetable.stockAvailable > 50
-                      ? 'bg-yellow-100 text-yellow-700'
-                      : 'bg-red-100 text-red-700'
-                  }`}
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}
                 >
                   Stok: {selectedVegetable.stockAvailable}
                 </span>
@@ -282,11 +281,10 @@ const BankBibit = ({ onNavigateBack, onOrder }) => {
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
-              className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
-                selectedCategory === category
+              className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${selectedCategory === category
                   ? 'bg-green-500 text-white shadow-md'
                   : 'bg-white text-gray-700 border border-gray-300'
-              }`}
+                }`}
             >
               {category}
             </button>
@@ -326,13 +324,12 @@ const BankBibit = ({ onNavigateBack, onOrder }) => {
               {/* Stock & Price */}
               <div className="flex items-center justify-between">
                 <span
-                  className={`text-xs font-semibold ${
-                    vegetable.stockAvailable > 100
+                  className={`text-xs font-semibold ${vegetable.stockAvailable > 100
                       ? 'text-green-600'
                       : vegetable.stockAvailable > 50
-                      ? 'text-yellow-600'
-                      : 'text-red-600'
-                  }`}
+                        ? 'text-yellow-600'
+                        : 'text-red-600'
+                    }`}
                 >
                   Stok: {vegetable.stockAvailable}
                 </span>

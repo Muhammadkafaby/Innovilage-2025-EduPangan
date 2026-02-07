@@ -10,6 +10,7 @@ import CatatPanen from '../components/mobile/CatatPanen';
 import MenuGizi from '../components/mobile/MenuGizi';
 import Edukasi from '../components/mobile/Edukasi';
 import DeviceMonitor from '../components/mobile/DeviceMonitor';
+import KebunSaya from '../components/mobile/KebunSaya';
 
 /**
  * Main App Component
@@ -118,6 +119,13 @@ export default function Home() {
         <DeviceMonitor
           user={user}
           onNavigateBack={() => navigate('dashboard')}
+        />
+      )}
+
+      {currentPage === 'kebun' && (
+        <KebunSaya
+          onNavigateBack={() => navigate('dashboard')}
+          onNavigate={navigate}
         />
       )}
     </div>

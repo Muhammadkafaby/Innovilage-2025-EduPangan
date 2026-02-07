@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { recipes } from '../../data/dummyData';
+import { recipes } from '../../data/staticData';
 
 /**
  * Menu Gizi Component
@@ -112,11 +112,10 @@ const MenuGizi = ({ onNavigateBack, userHarvests = [] }) => {
                   {selectedRecipe.ingredients.map((ingredient, idx) => (
                     <div
                       key={idx}
-                      className={`flex items-center justify-between p-3 rounded-lg ${
-                        ingredient.fromGarden
+                      className={`flex items-center justify-between p-3 rounded-lg ${ingredient.fromGarden
                           ? 'bg-green-50 border border-green-200'
                           : 'bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center space-x-3">
                         <span className="text-xl">
@@ -196,11 +195,10 @@ const MenuGizi = ({ onNavigateBack, userHarvests = [] }) => {
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
-                  selectedCategory === category
+                className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${selectedCategory === category
                     ? 'bg-orange-500 text-white shadow-md'
                     : 'bg-white text-gray-700 border border-gray-300'
-                }`}
+                  }`}
               >
                 {category}
               </button>
@@ -230,14 +228,12 @@ const MenuGizi = ({ onNavigateBack, userHarvests = [] }) => {
                 className="sr-only"
               />
               <div
-                className={`w-14 h-8 rounded-full transition-colors ${
-                  showOnlyFromGarden ? 'bg-green-500' : 'bg-gray-300'
-                }`}
+                className={`w-14 h-8 rounded-full transition-colors ${showOnlyFromGarden ? 'bg-green-500' : 'bg-gray-300'
+                  }`}
               >
                 <div
-                  className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-transform ${
-                    showOnlyFromGarden ? 'translate-x-7' : 'translate-x-1'
-                  } mt-1`}
+                  className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-transform ${showOnlyFromGarden ? 'translate-x-7' : 'translate-x-1'
+                    } mt-1`}
                 ></div>
               </div>
             </div>

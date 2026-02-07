@@ -1,10 +1,14 @@
+'use client';
+
 import React, { useState } from 'react';
-import { dashboardStats, gardenActivities, notifications } from '../../data/dummyData';
+import { useGardenData } from '../../hooks/useGardenData';
+import { useNotifications } from '../../hooks/useNotifications';
+import { vegetables } from '../../data/staticData';
 
 /**
  * Dashboard Component
  * Halaman utama aplikasi mobile dengan:
- * - Status Kebun
+ * - Status Kebun (real data dari localStorage)
  * - Quick Actions
  * - Statistik Personal
  * - Notifikasi
@@ -13,19 +17,27 @@ import { dashboardStats, gardenActivities, notifications } from '../../data/dumm
 const Dashboard = ({ user, onNavigate, onLogout }) => {
   const [activeTab, setActiveTab] = useState('home');
 
-  // Mock user garden data
+  // Real data from hooks
+  const { stats, activities, plants } = useGardenData();
+  const { unreadCount, notifications } = useNotifications();
+
+  // Garden stats from real data
   const userGarden = {
-    activePlants: 12,
-    readyToHarvest: 2,
-    totalHarvest: 45.5,
-    seedBankContribution: 8500,
+    activePlants: stats.activePlants || 0,
+    readyToHarvest: stats.readyToHarvest || 0,
+    totalHarvest: stats.totalHarvest || 0,
+    seedBankContribution: 0,
   };
 
-  // Recent activities
-  const recentActivities = gardenActivities.slice(0, 3);
+  // Recent activities from real data
+  const recentActivities = stats.recentActivities || [];
 
-  // Unread notifications
-  const unreadNotifications = notifications.filter((n) => !n.read).length;
+  // Get top 3 vegetables from staticData for bibit display
+  const topVegetables = vegetables.slice(0, 3).map(v => ({
+    name: v.name,
+    stock: v.stockAvailable,
+    icon: v.category === 'Sayuran Hijau' ? '🥬' : v.category === 'Bumbu' ? '🌶️' : '🌿'
+  }));
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
@@ -42,9 +54,9 @@ const Dashboard = ({ user, onNavigate, onLogout }) => {
             className="relative bg-white/20 p-3 rounded-full"
           >
             <span className="text-2xl">🔔</span>
-            {unreadNotifications > 0 && (
+            {unreadCount > 0 && (
               <span className="absolute top-1 right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold">
-                {unreadNotifications}
+                {unreadCount}
               </span>
             )}
           </button>
@@ -135,51 +147,55 @@ const Dashboard = ({ user, onNavigate, onLogout }) => {
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-gray-800 text-sm">Status Kebun Saya</h3>
             <button
-              onClick={() => onNavigate('kebun')}
+              onClick={() => onNavigate('device-monitor')}
               className="text-green-600 text-xs font-semibold"
             >
-              Lihat Semua →
+              Monitor IoT →
             </button>
           </div>
 
-          {/* Garden Health Indicators */}
+          {/* Garden Health Indicators - Dynamic */}
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
               <div className="flex items-center space-x-3">
-                <span className="text-2xl">💧</span>
+                <span className="text-2xl">🌱</span>
                 <div>
-                  <p className="font-semibold text-sm text-gray-800">Irigasi</p>
-                  <p className="text-xs text-gray-600">Terakhir 2 jam lalu</p>
+                  <p className="font-semibold text-sm text-gray-800">Tanaman Aktif</p>
+                  <p className="text-xs text-gray-600">{userGarden.activePlants} tanaman terdaftar</p>
                 </div>
               </div>
-              <span className="text-green-600 font-bold">Baik</span>
+              <span className={`font-bold ${userGarden.activePlants > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                {userGarden.activePlants > 0 ? 'Aktif' : 'Kosong'}
+              </span>
             </div>
 
             <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
               <div className="flex items-center space-x-3">
-                <span className="text-2xl">🌿</span>
+                <span className="text-2xl">✅</span>
                 <div>
-                  <p className="font-semibold text-sm text-gray-800">Kesehatan Tanaman</p>
-                  <p className="text-xs text-gray-600">12 tanaman sehat</p>
+                  <p className="font-semibold text-sm text-gray-800">Siap Panen</p>
+                  <p className="text-xs text-gray-600">{userGarden.readyToHarvest} tanaman siap</p>
                 </div>
               </div>
-              <span className="text-yellow-600 font-bold">Normal</span>
+              <span className={`font-bold ${userGarden.readyToHarvest > 0 ? 'text-yellow-600' : 'text-gray-400'}`}>
+                {userGarden.readyToHarvest > 0 ? 'Ada' : '-'}
+              </span>
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
               <div className="flex items-center space-x-3">
-                <span className="text-2xl">🧪</span>
+                <span className="text-2xl">📊</span>
                 <div>
-                  <p className="font-semibold text-sm text-gray-800">Kompos</p>
-                  <p className="text-xs text-gray-600">Stok cukup 2 minggu</p>
+                  <p className="font-semibold text-sm text-gray-800">Total Panen</p>
+                  <p className="text-xs text-gray-600">{userGarden.totalHarvest} kg tercatat</p>
                 </div>
               </div>
-              <span className="text-orange-600 font-bold">Cukup</span>
+              <span className="text-blue-600 font-bold">{userGarden.totalHarvest} kg</span>
             </div>
           </div>
         </div>
 
-        {/* Bank Bibit Tersedia */}
+        {/* Bank Bibit Tersedia - Dynamic */}
         <div className="bg-white rounded-2xl shadow-lg p-5">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-gray-800 text-sm">Bibit Tersedia</h3>
@@ -192,11 +208,7 @@ const Dashboard = ({ user, onNavigate, onLogout }) => {
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            {[
-              { name: 'Kangkung', stock: 150, icon: '🥬' },
-              { name: 'Bayam', stock: 200, icon: '🌿' },
-              { name: 'Cabai', stock: 80, icon: '🌶️' },
-            ].map((item, idx) => (
+            {topVegetables.map((item, idx) => (
               <div
                 key={idx}
                 className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-3 border border-green-200"

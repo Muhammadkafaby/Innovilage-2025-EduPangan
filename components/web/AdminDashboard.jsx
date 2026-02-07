@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { dashboardStats, users, seedBankTransactions, vegetables } from '../../data/dummyData';
+import { dashboardStats, users, seedBankTransactions, vegetables } from '../../data/staticData';
 
 /**
  * Admin Dashboard Component
@@ -47,11 +47,10 @@ const AdminDashboard = () => {
             <button
               key={item.id}
               onClick={() => setActiveMenu(item.id)}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg mb-2 transition-all ${
-                activeMenu === item.id
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg mb-2 transition-all ${activeMenu === item.id
                   ? 'bg-green-500 text-white shadow-md'
                   : 'text-gray-700 hover:bg-gray-100'
-              }`}
+                }`}
             >
               <span className="text-xl">{item.icon}</span>
               <span className="font-medium">{item.label}</span>
@@ -274,11 +273,10 @@ const AdminDashboard = () => {
                           <td className="py-3 px-4 text-sm">{user.phone}</td>
                           <td className="py-3 px-4 text-sm font-medium">{user.rw}</td>
                           <td className="py-3 px-4">
-                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                              user.role === 'kader'
+                            <span className={`px-2 py-1 rounded text-xs font-semibold ${user.role === 'kader'
                                 ? 'bg-orange-100 text-orange-700'
                                 : 'bg-blue-100 text-blue-700'
-                            }`}>
+                              }`}>
                               {user.role}
                             </span>
                           </td>
@@ -306,11 +304,10 @@ const AdminDashboard = () => {
                     <div key={veg.id} className="border border-gray-200 rounded-lg p-4 hover:border-green-500 transition-colors">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-bold text-gray-800">{veg.name}</h4>
-                        <span className={`px-2 py-1 rounded text-xs font-bold ${
-                          veg.stockAvailable > 100 ? 'bg-green-100 text-green-700' :
-                          veg.stockAvailable > 50 ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-red-100 text-red-700'
-                        }`}>
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${veg.stockAvailable > 100 ? 'bg-green-100 text-green-700' :
+                            veg.stockAvailable > 50 ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-red-100 text-red-700'
+                          }`}>
                           {veg.stockAvailable}
                         </span>
                       </div>
@@ -354,11 +351,10 @@ const AdminDashboard = () => {
                           {users.find(u => u.id === trans.userId)?.name}
                         </td>
                         <td className="py-3 px-4">
-                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                            trans.transactionType === 'ambil'
+                          <span className={`px-2 py-1 rounded text-xs font-semibold ${trans.transactionType === 'ambil'
                               ? 'bg-orange-100 text-orange-700'
                               : 'bg-green-100 text-green-700'
-                          }`}>
+                            }`}>
                             {trans.transactionType}
                           </span>
                         </td>

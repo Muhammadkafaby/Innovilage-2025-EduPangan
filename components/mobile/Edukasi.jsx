@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { educationArticles, videoTutorials } from '../../data/dummyData';
+import { educationArticles, videoTutorials } from '../../data/staticData';
 
 /**
  * Edukasi Component
@@ -67,9 +67,8 @@ const Edukasi = ({ onNavigateBack }) => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                activeTab === tab ? 'bg-blue-500 text-white' : 'text-gray-600'
-              }`}
+              className={`py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab === tab ? 'bg-blue-500 text-white' : 'text-gray-600'
+                }`}
             >
               {tab === 'artikel' ? '📰 Artikel' : tab === 'video' ? '🎥 Video' : '🎯 Kuis'}
             </button>

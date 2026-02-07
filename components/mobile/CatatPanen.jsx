@@ -1,13 +1,13 @@
+'use client';
+
 import React, { useState } from 'react';
-import { vegetables } from '../../data/dummyData';
+import { vegetables } from '../../data/staticData';
+import { useGardenData } from '../../hooks/useGardenData';
+import { useNotifications } from '../../hooks/useNotifications';
 
 /**
  * Catat Panen Component
- * Form untuk mencatat hasil panen dengan:
- * - Pilih jenis tanaman
- * - Input jumlah panen
- * - Upload foto (optional)
- * - Catatan tambahan
+ * Form untuk mencatat hasil panen dengan data persistence
  */
 const CatatPanen = ({ onNavigateBack, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -20,6 +20,10 @@ const CatatPanen = ({ onNavigateBack, onSubmit }) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
+
+  // Hooks for real data persistence
+  const { addHarvest, harvests } = useGardenData();
+  const { notifyHarvest } = useNotifications();
 
   // Get list of vegetables for dropdown
   const plantOptions = vegetables.map((v) => ({
@@ -39,7 +43,6 @@ const CatatPanen = ({ onNavigateBack, onSubmit }) => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5000000) {
-        // 5MB limit
         setErrors((prev) => ({
           ...prev,
           photo: 'Ukuran foto maksimal 5MB',
@@ -78,8 +81,22 @@ const CatatPanen = ({ onNavigateBack, onSubmit }) => {
 
     setIsSubmitting(true);
 
-    // Simulasi API call
+    // Save to localStorage via hook
     setTimeout(() => {
+      // Add harvest record to localStorage
+      addHarvest({
+        plantType: formData.plantType,
+        plantName: formData.plantType,
+        quantity: parseFloat(formData.quantity),
+        unit: formData.unit,
+        harvestDate: formData.harvestDate,
+        notes: formData.notes,
+        photo: formData.photo
+      });
+
+      // Create notification
+      notifyHarvest(formData.plantType, formData.quantity, formData.unit);
+
       setIsSubmitting(false);
       onSubmit && onSubmit(formData);
 
@@ -92,8 +109,15 @@ const CatatPanen = ({ onNavigateBack, onSubmit }) => {
         notes: '',
         photo: null,
       });
-    }, 1500);
+    }, 1000);
   };
+
+  // Get recent harvests from real data
+  const recentHarvests = harvests.slice(0, 3).map(h => ({
+    plant: h.plantType || h.plantName,
+    amount: `${h.quantity} ${h.unit}`,
+    date: new Date(h.date || h.harvestDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+  }));
 
   return (
     <div className="min-h-screen bg-gray-50 pb-8">
@@ -122,11 +146,10 @@ const CatatPanen = ({ onNavigateBack, onSubmit }) => {
             <select
               value={formData.plantType}
               onChange={(e) => handleChange('plantType', e.target.value)}
-              className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-green-200 transition-all outline-none appearance-none bg-white ${
-                errors.plantType
+              className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-green-200 transition-all outline-none appearance-none bg-white ${errors.plantType
                   ? 'border-red-300 focus:border-red-500'
                   : 'border-gray-200 focus:border-green-500'
-              }`}
+                }`}
             >
               <option value="">Pilih tanaman...</option>
               {plantOptions.map((plant) => (
@@ -153,11 +176,10 @@ const CatatPanen = ({ onNavigateBack, onSubmit }) => {
                 value={formData.quantity}
                 onChange={(e) => handleChange('quantity', e.target.value)}
                 placeholder="0.0"
-                className={`flex-1 px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-green-200 transition-all outline-none ${
-                  errors.quantity
+                className={`flex-1 px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-green-200 transition-all outline-none ${errors.quantity
                     ? 'border-red-300 focus:border-red-500'
                     : 'border-gray-200 focus:border-green-500'
-                }`}
+                  }`}
               />
               <select
                 value={formData.unit}
@@ -256,13 +278,11 @@ const CatatPanen = ({ onNavigateBack, onSubmit }) => {
               <span className="text-2xl mr-3">💡</span>
               <div>
                 <h3 className="font-semibold text-gray-800 text-sm mb-1">
-                  Kenapa Catat Panen?
+                  Data Tersimpan Otomatis
                 </h3>
-                <ul className="text-xs text-gray-700 space-y-1">
-                  <li>• Monitoring konsumsi gizi keluarga</li>
-                  <li>• Analisis produktivitas kebun</li>
-                  <li>• Dapatkan rekomendasi menu sehat</li>
-                </ul>
+                <p className="text-xs text-gray-700">
+                  Catatan panen Anda akan tersimpan dan muncul di Dashboard
+                </p>
               </div>
             </div>
           </div>
@@ -271,11 +291,10 @@ const CatatPanen = ({ onNavigateBack, onSubmit }) => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`w-full py-4 rounded-xl font-semibold text-white transition-all shadow-lg ${
-              isSubmitting
+            className={`w-full py-4 rounded-xl font-semibold text-white transition-all shadow-lg ${isSubmitting
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-green-500 hover:bg-green-600 active:scale-95'
-            }`}
+              }`}
           >
             {isSubmitting ? (
               <span className="flex items-center justify-center">
@@ -303,35 +322,39 @@ const CatatPanen = ({ onNavigateBack, onSubmit }) => {
           </button>
         </form>
 
-        {/* Recent Harvests */}
+        {/* Recent Harvests - using real data */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mt-4">
           <h3 className="font-bold text-gray-800 mb-4 text-sm">
             Panen Terbaru Anda
           </h3>
           <div className="space-y-3">
-            {[
-              { plant: 'Bayam', amount: '2.5 kg', date: '8 Jan' },
-              { plant: 'Kangkung', amount: '3.0 kg', date: '5 Jan' },
-              { plant: 'Cabai', amount: '0.8 kg', date: '2 Jan' },
-            ].map((harvest, idx) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-              >
-                <div className="flex items-center space-x-3">
-                  <span className="text-2xl">✅</span>
-                  <div>
-                    <p className="font-semibold text-sm text-gray-800">
-                      {harvest.plant}
-                    </p>
-                    <p className="text-xs text-gray-600">{harvest.date}</p>
+            {recentHarvests.length > 0 ? (
+              recentHarvests.map((harvest, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
+                  <div className="flex items-center space-x-3">
+                    <span className="text-2xl">✅</span>
+                    <div>
+                      <p className="font-semibold text-sm text-gray-800">
+                        {harvest.plant}
+                      </p>
+                      <p className="text-xs text-gray-600">{harvest.date}</p>
+                    </div>
                   </div>
+                  <span className="text-sm font-bold text-green-600">
+                    {harvest.amount}
+                  </span>
                 </div>
-                <span className="text-sm font-bold text-green-600">
-                  {harvest.amount}
-                </span>
+              ))
+            ) : (
+              <div className="text-center py-6 text-gray-500">
+                <span className="text-4xl block mb-2">🌱</span>
+                <p className="text-sm">Belum ada catatan panen</p>
+                <p className="text-xs">Mulai catat hasil panen pertama Anda!</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
