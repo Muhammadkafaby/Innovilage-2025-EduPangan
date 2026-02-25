@@ -73,7 +73,7 @@ export default function Home() {
 
   return (
     <ToastProvider>
-      <div className="max-w-md mx-auto min-h-screen">
+      <div className="max-w-md mx-auto min-h-screen mobile-shell">
         <ToastContainer />
         
         {currentPage === 'splash' && (

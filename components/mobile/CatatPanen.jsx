@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import Icon from '../shared/Icon';
 import Badge from '../shared/Badge';
 import { vegetables } from '../../data/staticData';
@@ -20,21 +21,21 @@ const CatatPanen = ({ onNavigateBack, onSubmit, userId = 1 }) => {
   const [errors, setErrors] = useState({});
   const [recentHarvests, setRecentHarvests] = useState([]);
 
-  const { get, post, loading, error } = useApi('/api');
+  const { get, post } = useApi('/api');
   const { notifyHarvest } = useNotifications();
 
-  useEffect(() => {
-    loadRecentHarvests();
-  }, []);
-
-  const loadRecentHarvests = async () => {
+  const loadRecentHarvests = useCallback(async () => {
     try {
       const harvestsData = await get('/garden', { userId, type: 'harvests' });
       setRecentHarvests(harvestsData || []);
     } catch (err) {
       console.error('Failed to load harvests:', err);
     }
-  };
+  }, [get, userId]);
+
+  useEffect(() => {
+    loadRecentHarvests();
+  }, [loadRecentHarvests]);
 
   const plantOptions = vegetables.map((v) => ({
     id: v.id,
@@ -130,11 +131,11 @@ const CatatPanen = ({ onNavigateBack, onSubmit, userId = 1 }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#E0E5EC] pb-8">
+    <div className="min-h-screen bg-transparent pb-8">
       <div className="px-6 pt-8 pb-4">
         <button
           onClick={onNavigateBack}
-          className="neo-button w-10 h-10 flex items-center justify-center mb-4"
+          className="neo-button w-10 h-10 flex items-center justify-center mb-4 border border-white/45"
         >
           <Icon name="arrowLeft" size={20} color="#6B7280" />
         </button>
@@ -143,7 +144,7 @@ const CatatPanen = ({ onNavigateBack, onSubmit, userId = 1 }) => {
       </div>
 
       <div className="px-6 space-y-5">
-        <div className="neo-card p-6">
+        <div className="neo-card p-6 border border-white/45">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -244,11 +245,15 @@ const CatatPanen = ({ onNavigateBack, onSubmit, userId = 1 }) => {
 
               {formData.photo ? (
                 <div className="relative">
-                  <img
-                    src={formData.photo}
-                    alt="Preview"
-                    className="w-full h-48 object-cover rounded-2xl neo-inset"
-                  />
+                  <div className="relative w-full h-48 rounded-2xl overflow-hidden neo-inset">
+                    <Image
+                      src={formData.photo}
+                      alt="Preview hasil panen"
+                      fill
+                      sizes="(max-width: 768px) 100vw, 400px"
+                      className="object-cover"
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={() => handleChange('photo', null)}
@@ -258,7 +263,7 @@ const CatatPanen = ({ onNavigateBack, onSubmit, userId = 1 }) => {
                   </button>
                 </div>
               ) : (
-                <label className="block neo-inset rounded-2xl p-8 text-center cursor-pointer">
+                  <label className="block neo-inset rounded-2xl p-8 text-center cursor-pointer border border-white/40">
                   <input
                     type="file"
                     accept="image/*"
@@ -323,7 +328,7 @@ const CatatPanen = ({ onNavigateBack, onSubmit, userId = 1 }) => {
                 transition-all
                 ${isSubmitting
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-green-500 text-white active:neo-button-active shadow-neo-button'
+                  : 'bg-gradient-to-r from-green-600 to-green-500 text-white active:neo-button-active shadow-green'
                 }
               `}
             >
@@ -342,7 +347,7 @@ const CatatPanen = ({ onNavigateBack, onSubmit, userId = 1 }) => {
           </form>
         </div>
 
-        <div className="neo-card p-5">
+        <div className="neo-card p-5 border border-white/45">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-gray-800">Panen Terbaru</h3>
             <Badge>{recentHarvests.length} catatan</Badge>

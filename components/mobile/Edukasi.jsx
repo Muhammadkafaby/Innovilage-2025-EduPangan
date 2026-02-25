@@ -11,11 +11,11 @@ const Edukasi = ({ onNavigateBack }) => {
 
   if (selectedArticle) {
     return (
-      <div className="min-h-screen bg-[#E0E5EC] pb-8">
+      <div className="min-h-screen bg-transparent pb-8">
         <div className="px-6 pt-8 pb-4">
           <button
             onClick={() => setSelectedArticle(null)}
-            className="neo-button w-10 h-10 flex items-center justify-center mb-4"
+            className="neo-button w-10 h-10 flex items-center justify-center mb-4 border border-white/45"
           >
             <Icon name="arrowLeft" size={20} color="#6B7280" />
           </button>
@@ -23,7 +23,7 @@ const Edukasi = ({ onNavigateBack }) => {
         </div>
 
         <div className="px-6">
-          <div className="neo-card p-6">
+          <div className="neo-card p-6 border border-white/45">
             <div className="flex items-center gap-4 text-sm text-gray-500 mb-4 flex-wrap">
               <span className="flex items-center gap-1">
                 <Icon name="calendar" size={14} />
@@ -63,11 +63,11 @@ const Edukasi = ({ onNavigateBack }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#E0E5EC] pb-8">
+    <div className="min-h-screen bg-transparent pb-8">
       <div className="px-6 pt-8 pb-4">
         <button
           onClick={onNavigateBack}
-          className="neo-button w-10 h-10 flex items-center justify-center mb-4"
+          className="neo-button w-10 h-10 flex items-center justify-center mb-4 border border-white/45"
         >
           <Icon name="arrowLeft" size={20} color="#6B7280" />
         </button>
@@ -85,7 +85,7 @@ const Edukasi = ({ onNavigateBack }) => {
                 flex-1 flex items-center justify-center gap-2 py-3 rounded-xl
                 font-semibold text-sm transition-all
                 ${activeTab === tab.id
-                  ? 'neo-button text-green-500'
+                  ? 'neo-button text-green-500 border border-white/45'
                   : 'text-gray-500'
                 }
               `}
@@ -108,7 +108,7 @@ const Edukasi = ({ onNavigateBack }) => {
               <button
                 key={article.id}
                 onClick={() => setSelectedArticle(article)}
-                className="w-full neo-card p-4 text-left active:neo-button-active transition-all"
+                className="w-full neo-card p-4 text-left active:neo-button-active transition-all border border-white/45"
               >
                 <div className="flex gap-4">
                   <div className="w-20 h-20 neo-inset rounded-xl flex items-center justify-center flex-shrink-0">
@@ -135,7 +135,7 @@ const Edukasi = ({ onNavigateBack }) => {
         {activeTab === 'video' && (
           <div className="space-y-4">
             {videoTutorials.map((video) => (
-              <div key={video.id} className="neo-card overflow-hidden">
+              <div key={video.id} className="neo-card overflow-hidden border border-white/45">
                 <div className="w-full h-48 neo-inset flex items-center justify-center">
                   <div className="w-16 h-16 neo-button rounded-full flex items-center justify-center">
                     <Icon name="play" size={28} color="#EF4444" />
@@ -158,7 +158,7 @@ const Edukasi = ({ onNavigateBack }) => {
         )}
 
         {activeTab === 'kuis' && (
-          <div className="neo-card p-8 text-center">
+          <div className="neo-card p-8 text-center border border-white/45">
             <div className="w-24 h-24 neo-inset rounded-2xl flex items-center justify-center mx-auto mb-6">
               <Icon name="education" size={48} color="#8B5CF6" />
             </div>
@@ -168,7 +168,7 @@ const Edukasi = ({ onNavigateBack }) => {
             </p>
             <button
               onClick={() => alert('Fitur kuis akan segera hadir!')}
-              className="neo-button px-8 py-4 font-semibold text-purple-500 inline-flex items-center gap-2"
+              className="neo-button px-8 py-4 font-semibold text-purple-500 inline-flex items-center gap-2 border border-white/45"
             >
               <Icon name="sparkles" size={20} color="#8B5CF6" />
               Mulai Kuis

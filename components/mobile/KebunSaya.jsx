@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Icon from '../shared/Icon';
 import Badge from '../shared/Badge';
-import { Skeleton, ListSkeleton } from '../shared/Skeleton';
+import { ListSkeleton } from '../shared/Skeleton';
 import { useApi } from '../../hooks/useApi';
 import { useNotifications } from '../../hooks/useNotifications';
 import { vegetables } from '../../data/staticData';
@@ -24,11 +24,7 @@ const KebunSaya = ({ onNavigateBack, onNavigate, userId = 1 }) => {
   const { get, post, put, del, loading, error } = useApi('/api');
   const { notifyPlanting } = useNotifications();
 
-  useEffect(() => {
-    loadGardenData();
-  }, []);
-
-  const loadGardenData = async () => {
+  const loadGardenData = useCallback(async () => {
     try {
       const plantsData = await get('/garden', { userId, type: 'plants' });
       const activitiesData = await get('/garden', { userId, type: 'activities' });
@@ -50,7 +46,11 @@ const KebunSaya = ({ onNavigateBack, onNavigate, userId = 1 }) => {
     } catch (err) {
       console.error('Failed to load garden data:', err);
     }
-  };
+  }, [get, userId]);
+
+  useEffect(() => {
+    loadGardenData();
+  }, [loadGardenData]);
 
   const handleAddPlant = async () => {
     if (!selectedVegetable || !quantity) {
@@ -114,11 +114,11 @@ const KebunSaya = ({ onNavigateBack, onNavigate, userId = 1 }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#E0E5EC] pb-8">
+    <div className="min-h-screen bg-transparent pb-8">
       <div className="px-6 pt-8 pb-4">
         <button
           onClick={onNavigateBack}
-          className="neo-button w-10 h-10 flex items-center justify-center mb-4"
+          className="neo-button w-10 h-10 flex items-center justify-center mb-4 border border-white/45"
         >
           <Icon name="arrowLeft" size={20} color="#6B7280" />
         </button>
@@ -127,7 +127,7 @@ const KebunSaya = ({ onNavigateBack, onNavigate, userId = 1 }) => {
       </div>
 
       <div className="px-6 space-y-5">
-        <div className="neo-card p-5">
+        <div className="neo-card p-5 border border-white/45">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <div className="w-12 h-12 neo-inset rounded-xl flex items-center justify-center mx-auto mb-2">
@@ -156,7 +156,7 @@ const KebunSaya = ({ onNavigateBack, onNavigate, userId = 1 }) => {
         {loading && <ListSkeleton count={3} />}
 
         {error && (
-          <div className="neo-card p-4 border-l-4 border-red-500 bg-red-50">
+          <div className="neo-card p-4 border-l-4 border-red-500 bg-red-50 border border-red-100">
             <div className="flex items-center gap-3">
               <Icon name="errorCircle" size={20} color="#EF4444" />
               <p className="text-sm text-red-600">Error: {error}</p>
@@ -166,13 +166,13 @@ const KebunSaya = ({ onNavigateBack, onNavigate, userId = 1 }) => {
 
         <button
           onClick={() => setShowAddPlant(true)}
-          className="w-full neo-button py-4 flex items-center justify-center gap-2 text-green-500 font-semibold"
+          className="w-full neo-button py-4 flex items-center justify-center gap-2 text-green-500 font-semibold border border-white/45"
         >
           <Icon name="plus" size={20} color="#4CAF50" />
           Tambah Tanaman Baru
         </button>
 
-        <div className="neo-card p-5">
+        <div className="neo-card p-5 border border-white/45">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-gray-800">Tanaman Aktif</h3>
             <Badge>{plants.length} tanaman</Badge>
@@ -227,14 +227,14 @@ const KebunSaya = ({ onNavigateBack, onNavigate, userId = 1 }) => {
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleMarkReady(plant.id)}
-                          className="flex-1 py-2 neo-button text-orange-500 text-sm font-semibold"
-                        >
+                           className="flex-1 py-2 neo-button text-orange-500 text-sm font-semibold border border-white/40"
+                         >
                           Tandai Siap Panen
                         </button>
                         <button
                           onClick={() => handleDeletePlant(plant.id)}
-                          className="py-2 px-4 neo-button text-red-500 text-sm font-semibold"
-                        >
+                           className="py-2 px-4 neo-button text-red-500 text-sm font-semibold border border-white/40"
+                         >
                           <Icon name="trash" size={16} color="#EF4444" />
                         </button>
                       </div>
@@ -243,8 +243,8 @@ const KebunSaya = ({ onNavigateBack, onNavigate, userId = 1 }) => {
                     {plant.status === 'siap_panen' && (
                       <button
                         onClick={() => onNavigate('catat-panen')}
-                        className="w-full py-2 bg-green-500 text-white rounded-xl text-sm font-semibold"
-                      >
+                         className="w-full py-2 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-xl text-sm font-semibold"
+                       >
                         Catat Panen
                       </button>
                     )}
@@ -255,7 +255,7 @@ const KebunSaya = ({ onNavigateBack, onNavigate, userId = 1 }) => {
           )}
         </div>
 
-        <div className="neo-card p-5">
+        <div className="neo-card p-5 border border-white/45">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-gray-800">Aktivitas Terbaru</h3>
             <Icon name="clock" size={18} color="#9CA3AF" />
@@ -316,12 +316,12 @@ const KebunSaya = ({ onNavigateBack, onNavigate, userId = 1 }) => {
 
       {showAddPlant && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
-          <div className="neo-card w-full max-w-md p-6 animate-scale-in">
+          <div className="neo-card w-full max-w-md p-6 animate-scale-in border border-white/45">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-lg text-gray-800">Tambah Tanaman</h3>
               <button
                 onClick={() => setShowAddPlant(false)}
-                className="neo-button w-8 h-8 flex items-center justify-center"
+                className="neo-button w-8 h-8 flex items-center justify-center border border-white/40"
               >
                 <Icon name="xmark" size={18} color="#6B7280" />
               </button>
@@ -374,10 +374,10 @@ const KebunSaya = ({ onNavigateBack, onNavigate, userId = 1 }) => {
                   transition-all
                   ${loading
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-green-500 text-white active:neo-button-active shadow-neo-button'
-                  }
-                `}
-              >
+                     : 'bg-gradient-to-r from-green-600 to-green-500 text-white active:neo-button-active shadow-green'
+                   }
+                 `}
+               >
                 {loading ? (
                   <>
                     <Icon name="refresh" size={20} className="animate-spin" />

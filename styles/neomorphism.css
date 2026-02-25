@@ -1,11 +1,11 @@
 /* Neomorphism Design System */
 
 :root {
-  --neo-bg: #E0E5EC;
+  --neo-bg: #edf2ea;
   --neo-light: #FFFFFF;
-  --neo-dark: #A3B1C6;
-  --neo-shadow: rgba(163, 177, 198, 0.6);
-  --neo-shadow-light: rgba(255, 255, 255, 0.8);
+  --neo-dark: #b7c2b4;
+  --neo-shadow: rgba(146, 159, 143, 0.45);
+  --neo-shadow-light: rgba(255, 255, 255, 0.85);
   --primary-green: #4CAF50;
   --primary-green-dark: #388E3C;
   --accent-orange: #FF9800;
@@ -26,7 +26,7 @@
 
 .neo-card {
   background: var(--neo-bg);
-  box-shadow: 8px 8px 20px var(--neo-shadow), -8px -8px 20px var(--neo-shadow-light);
+  box-shadow: 10px 10px 24px var(--neo-shadow), -10px -10px 24px var(--neo-shadow-light);
   border-radius: 20px;
 }
 
@@ -55,6 +55,13 @@
   transition: all 0.2s ease;
 }
 
+.neo-button-sm {
+  background: var(--neo-bg);
+  box-shadow: 3px 3px 6px var(--neo-shadow), -3px -3px 6px var(--neo-shadow-light);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
 .neo-button:hover {
   box-shadow: 4px 4px 8px var(--neo-shadow), -4px -4px 8px var(--neo-shadow-light);
 }
@@ -73,6 +80,13 @@
 
 .neo-input:focus {
   box-shadow: inset 4px 4px 8px var(--neo-shadow), inset -4px -4px 8px var(--neo-shadow-light), 0 0 0 3px rgba(76, 175, 80, 0.3);
+}
+
+.mobile-shell {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.16) 100%);
+  border-left: 1px solid rgba(255, 255, 255, 0.35);
+  border-right: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 12px 40px rgba(105, 122, 103, 0.2);
 }
 
 /* Glass Effect */

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Icon from '../shared/Icon';
 import Badge from '../shared/Badge';
 import { useGardenData } from '../../hooks/useGardenData';
@@ -14,11 +14,7 @@ const Profil = ({ user, onNavigateBack, onLogout, onNavigate, userId = 1 }) => {
   const { stats, clearAllData } = useGardenData();
   const { get, put, loading, error } = useApi('/api');
 
-  useEffect(() => {
-    loadNotifications();
-  }, []);
-
-  const loadNotifications = async () => {
+  const loadNotifications = useCallback(async () => {
     try {
       const notificationsData = await get('/notifications', { userId });
       setNotifications(notificationsData || []);
@@ -26,7 +22,11 @@ const Profil = ({ user, onNavigateBack, onLogout, onNavigate, userId = 1 }) => {
     } catch (err) {
       console.error('Failed to load notifications:', err);
     }
-  };
+  }, [get, userId]);
+
+  useEffect(() => {
+    loadNotifications();
+  }, [loadNotifications]);
 
   const handleClearAllData = async () => {
     clearAllData();
@@ -112,11 +112,11 @@ const Profil = ({ user, onNavigateBack, onLogout, onNavigate, userId = 1 }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#E0E5EC] pb-8">
+    <div className="min-h-screen bg-transparent pb-8">
       <div className="px-6 pt-8 pb-4">
         <button
           onClick={onNavigateBack}
-          className="neo-button w-10 h-10 flex items-center justify-center mb-4"
+          className="neo-button w-10 h-10 flex items-center justify-center mb-4 border border-white/45"
         >
           <Icon name="arrowLeft" size={20} color="#6B7280" />
         </button>
@@ -124,7 +124,7 @@ const Profil = ({ user, onNavigateBack, onLogout, onNavigate, userId = 1 }) => {
       </div>
 
       <div className="px-6 space-y-5">
-        <div className="neo-card p-6">
+        <div className="neo-card p-6 border border-white/45">
           <div className="flex items-center gap-4 mb-6">
             <div className="w-20 h-20 neo-inset rounded-full flex items-center justify-center">
               <Icon name="user" size={40} color="#4CAF50" />
@@ -158,14 +158,14 @@ const Profil = ({ user, onNavigateBack, onLogout, onNavigate, userId = 1 }) => {
           </div>
         </div>
 
-        <div className="neo-card p-5">
+        <div className="neo-card p-5 border border-white/45">
           <h3 className="font-bold text-gray-800 mb-4">Akses Cepat</h3>
           <div className="grid grid-cols-2 gap-3">
             {menuItems.map((item, idx) => (
               <button
                 key={idx}
                 onClick={item.action}
-                className="neo-button p-4 text-left active:neo-button-active transition-all"
+                className="neo-button p-4 text-left active:neo-button-active transition-all border border-white/40"
               >
                 <div className={`w-12 h-12 neo-inset rounded-xl flex items-center justify-center mb-3 ${
                   item.color === 'green' ? 'bg-green-50' :
@@ -191,7 +191,7 @@ const Profil = ({ user, onNavigateBack, onLogout, onNavigate, userId = 1 }) => {
           </div>
         </div>
 
-        <div className="neo-card p-5">
+        <div className="neo-card p-5 border border-white/45">
           <h3 className="font-bold text-gray-800 mb-4">Pengaturan</h3>
           <div className="space-y-2">
             {settingsItems.map((item, idx) => (
@@ -225,7 +225,7 @@ const Profil = ({ user, onNavigateBack, onLogout, onNavigate, userId = 1 }) => {
 
         <button
           onClick={onLogout}
-          className="w-full neo-card py-4 flex items-center justify-center gap-2 text-red-500 font-semibold"
+          className="w-full neo-card py-4 flex items-center justify-center gap-2 text-red-500 font-semibold border border-red-100"
         >
           <Icon name="arrowRight" size={20} color="#EF4444" className="rotate-180" />
           Keluar Akun
@@ -242,7 +242,7 @@ const Profil = ({ user, onNavigateBack, onLogout, onNavigate, userId = 1 }) => {
 
       {showClearDataConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
-          <div className="neo-card w-full max-w-md p-6 animate-scale-in">
+          <div className="neo-card w-full max-w-md p-6 animate-scale-in border border-white/45">
             <div className="w-16 h-16 neo-inset rounded-full flex items-center justify-center mx-auto mb-4">
               <Icon name="warning" size={32} color="#EF4444" />
             </div>
@@ -262,8 +262,8 @@ const Profil = ({ user, onNavigateBack, onLogout, onNavigate, userId = 1 }) => {
               </button>
               <button
                 onClick={handleClearAllData}
-                className="flex-1 py-3 bg-red-500 text-white rounded-xl font-semibold"
-              >
+                 className="flex-1 py-3 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl font-semibold"
+               >
                 Hapus
               </button>
             </div>

@@ -44,11 +44,11 @@ const MenuGizi = ({ onNavigateBack, userHarvests = [] }) => {
     ).length;
 
     return (
-      <div className="min-h-screen bg-[#E0E5EC] pb-8">
+      <div className="min-h-screen bg-transparent pb-8">
         <div className="px-6 pt-8 pb-4">
           <button
             onClick={() => setSelectedRecipe(null)}
-            className="neo-button w-10 h-10 flex items-center justify-center mb-4"
+            className="neo-button w-10 h-10 flex items-center justify-center mb-4 border border-white/45"
           >
             <Icon name="arrowLeft" size={20} color="#6B7280" />
           </button>
@@ -56,7 +56,7 @@ const MenuGizi = ({ onNavigateBack, userHarvests = [] }) => {
         </div>
 
         <div className="px-6 space-y-5">
-          <div className="neo-card overflow-hidden">
+          <div className="neo-card overflow-hidden border border-white/45">
             <div className="w-full h-48 neo-inset flex items-center justify-center">
               <div className="w-24 h-24 neo-button rounded-2xl flex items-center justify-center">
                 <Icon name="heart" size={48} color="#F97316" />
@@ -159,16 +159,16 @@ const MenuGizi = ({ onNavigateBack, userHarvests = [] }) => {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <button
+             <button
               onClick={() => alert('Resep disimpan ke favorit!')}
-              className="neo-button py-4 flex items-center justify-center gap-2 text-red-500 font-semibold"
+              className="neo-button py-4 flex items-center justify-center gap-2 text-red-500 font-semibold border border-white/45"
             >
               <Icon name="heart" size={20} color="#EF4444" />
               Simpan
             </button>
             <button
               onClick={() => alert('Fitur bagikan akan segera hadir!')}
-              className="bg-orange-500 text-white py-4 rounded-xl font-semibold flex items-center justify-center gap-2 active:neo-button-active"
+              className="bg-gradient-to-r from-orange-500 to-amber-500 text-white py-4 rounded-xl font-semibold flex items-center justify-center gap-2 active:neo-button-active"
             >
               <Icon name="share" size={20} color="white" />
               Bagikan
@@ -180,16 +180,18 @@ const MenuGizi = ({ onNavigateBack, userHarvests = [] }) => {
   }
 
   return (
-    <div className="min-h-screen bg-[#E0E5EC] pb-8">
+    <div className="min-h-screen bg-transparent pb-8">
       <div className="px-6 pt-8 pb-4">
         <button
           onClick={onNavigateBack}
-          className="neo-button w-10 h-10 flex items-center justify-center mb-4"
+          className="neo-button w-10 h-10 flex items-center justify-center mb-4 border border-white/45"
         >
           <Icon name="arrowLeft" size={20} color="#6B7280" />
         </button>
         <h1 className="text-2xl font-bold text-gray-800 mb-2">Menu Gizi Sehat</h1>
-        <p className="text-sm text-gray-500">Rekomendasi menu dari hasil panen Anda</p>
+        <p className="text-sm text-gray-500">
+          Rekomendasi menu dari hasil panen Anda ({userHarvests.length} hasil kebun)
+        </p>
       </div>
 
       <div className="px-6 py-4 space-y-4">
@@ -203,7 +205,7 @@ const MenuGizi = ({ onNavigateBack, userHarvests = [] }) => {
                   flex items-center gap-2 px-4 py-2 rounded-xl whitespace-nowrap
                   font-medium text-sm transition-all
                   ${selectedCategory === cat.id
-                    ? 'neo-button text-orange-500'
+                    ? 'neo-button text-orange-500 border border-white/45'
                     : 'neo-inset text-gray-500'
                   }
                 `}
@@ -219,7 +221,7 @@ const MenuGizi = ({ onNavigateBack, userHarvests = [] }) => {
           </div>
         </div>
 
-        <div className="neo-card p-4">
+        <div className="neo-card p-4 border border-white/45">
           <Toggle
             enabled={showOnlyFromGarden}
             onChange={setShowOnlyFromGarden}
@@ -244,7 +246,7 @@ const MenuGizi = ({ onNavigateBack, userHarvests = [] }) => {
               <button
                 key={recipe.id}
                 onClick={() => setSelectedRecipe(recipe)}
-                className="w-full neo-card overflow-hidden text-left active:neo-button-active transition-all"
+                className="w-full neo-card overflow-hidden text-left active:neo-button-active transition-all border border-white/45"
               >
                 <div className="flex">
                   <div className="w-28 h-28 neo-inset flex items-center justify-center flex-shrink-0">
@@ -297,7 +299,7 @@ const MenuGizi = ({ onNavigateBack, userHarvests = [] }) => {
       </div>
 
       <div className="px-6 mt-6">
-        <div className="neo-card p-5">
+        <div className="neo-card p-5 border border-white/45">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 neo-inset rounded-xl flex items-center justify-center">
               <Icon name="chart" size={20} color="#4CAF50" />

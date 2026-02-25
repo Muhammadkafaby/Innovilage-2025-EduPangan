@@ -2,9 +2,8 @@
 
 import React, { useEffect } from 'react';
 import Icon from '../shared/Icon';
-import Badge, { StatusBadge } from '../shared/Badge';
-import { CircularProgress, Gauge } from '../shared/ProgressBar';
-import { Toggle } from '../shared/Toggle';
+import Badge from '../shared/Badge';
+import { CircularProgress } from '../shared/ProgressBar';
 import { useMqtt, MQTT_STATE } from '../../hooks/useMqtt';
 
 const DeviceMonitor = ({ user, onNavigateBack }) => {
@@ -29,7 +28,7 @@ const DeviceMonitor = ({ user, onNavigateBack }) => {
       connect();
     }
     return () => disconnect();
-  }, [deviceNumber]);
+  }, [deviceNumber, connect, disconnect]);
 
   const getStatusConfig = () => {
     switch (connectionState) {
@@ -66,12 +65,12 @@ const DeviceMonitor = ({ user, onNavigateBack }) => {
   const pumpConfig = getPumpConfig(sensorData?.pompa);
 
   return (
-    <div className="min-h-screen bg-[#E0E5EC] pb-8">
+    <div className="min-h-screen bg-transparent pb-8">
       <div className="px-6 pt-8 pb-4">
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={onNavigateBack}
-            className="neo-button w-10 h-10 flex items-center justify-center"
+            className="neo-button w-10 h-10 flex items-center justify-center border border-white/45"
           >
             <Icon name="arrowLeft" size={20} color="#6B7280" />
           </button>
@@ -88,7 +87,7 @@ const DeviceMonitor = ({ user, onNavigateBack }) => {
           </div>
         </div>
 
-        <div className="neo-card p-4">
+        <div className="neo-card p-4 border border-white/45">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 neo-inset rounded-xl flex items-center justify-center">
@@ -109,7 +108,7 @@ const DeviceMonitor = ({ user, onNavigateBack }) => {
 
       <div className="px-6 space-y-5">
         {error && (
-          <div className="neo-card p-4 border-l-4 border-red-500 bg-red-50">
+          <div className="neo-card p-4 border-l-4 border-red-500 bg-red-50 border border-red-100">
             <div className="flex items-center gap-3">
               <Icon name="errorCircle" size={24} color="#EF4444" />
               <div>
@@ -121,7 +120,7 @@ const DeviceMonitor = ({ user, onNavigateBack }) => {
         )}
 
         {!isConnected && !error && (
-          <div className="neo-card p-4">
+          <div className="neo-card p-4 border border-white/45">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className={`w-12 h-12 neo-inset rounded-xl flex items-center justify-center ${isConnecting ? 'animate-pulse' : ''}`}>
@@ -139,7 +138,7 @@ const DeviceMonitor = ({ user, onNavigateBack }) => {
               {!isConnecting && (
                 <button
                   onClick={connect}
-                  className="neo-button px-4 py-2 text-sm font-semibold text-yellow-600"
+                  className="neo-button px-4 py-2 text-sm font-semibold text-yellow-600 border border-white/40"
                 >
                   Hubungkan
                 </button>
@@ -148,7 +147,7 @@ const DeviceMonitor = ({ user, onNavigateBack }) => {
           </div>
         )}
 
-        <div className="neo-card p-6">
+        <div className="neo-card p-6 border border-white/45">
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-bold text-gray-800">Kelembapan Tanah</h3>
             <Badge variant={moistureConfig.level === 'high' ? 'info' : moistureConfig.level === 'medium' ? 'success' : 'error'}>
@@ -175,7 +174,7 @@ const DeviceMonitor = ({ user, onNavigateBack }) => {
           </div>
         </div>
 
-        <div className="neo-card p-5">
+        <div className="neo-card p-5 border border-white/45">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-gray-800">Status Pompa</h3>
             <div className={`w-10 h-10 ${pumpConfig.color} rounded-xl flex items-center justify-center`}>
@@ -201,7 +200,7 @@ const DeviceMonitor = ({ user, onNavigateBack }) => {
           )}
         </div>
 
-        <div className="neo-card p-5">
+        <div className="neo-card p-5 border border-white/45">
           <h3 className="font-bold text-gray-800 mb-4">Kontrol Pompa</h3>
 
           <div className="grid grid-cols-3 gap-3 mb-4">
@@ -264,7 +263,7 @@ const DeviceMonitor = ({ user, onNavigateBack }) => {
           </div>
         </div>
 
-        <div className="neo-card p-5">
+        <div className="neo-card p-5 border border-white/45">
           <h3 className="font-bold text-gray-800 mb-4">Info Koneksi</h3>
 
           <div className="space-y-3">
@@ -307,7 +306,7 @@ const DeviceMonitor = ({ user, onNavigateBack }) => {
           disabled={!isConnected}
           className={`
             w-full neo-button py-4 font-semibold flex items-center justify-center gap-2 transition-all
-            ${isConnected ? 'text-blue-500 active:neo-button-active' : 'text-gray-400 cursor-not-allowed'}
+            ${isConnected ? 'text-blue-500 active:neo-button-active border border-white/45' : 'text-gray-400 cursor-not-allowed border border-white/45'}
           `}
         >
           <Icon name="clipboard" size={20} color={isConnected ? '#3B82F6' : '#9CA3AF'} />

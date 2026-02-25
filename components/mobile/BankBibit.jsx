@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Icon from '../shared/Icon';
 import Badge from '../shared/Badge';
-import { Skeleton, GridSkeleton } from '../shared/Skeleton';
+import { GridSkeleton } from '../shared/Skeleton';
 import { useApi } from '../../hooks/useApi';
 
 const BankBibit = ({ onNavigateBack, onOrder, userId = 1 }) => {
@@ -25,18 +25,18 @@ const BankBibit = ({ onNavigateBack, onOrder, userId = 1 }) => {
     { id: 'Umbi', icon: 'chart' },
   ];
 
-  useEffect(() => {
-    loadSeeds();
-  }, []);
-
-  const loadSeeds = async () => {
+  const loadSeeds = useCallback(async () => {
     try {
       const data = await get('/seeds', { type: 'stock' });
       setSeeds(data);
     } catch (err) {
       console.error('Failed to load seeds:', err);
     }
-  };
+  }, [get]);
+
+  useEffect(() => {
+    loadSeeds();
+  }, [loadSeeds]);
 
   const filteredVegetables = seeds.filter((veg) => {
     const matchesSearch = veg.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -86,11 +86,11 @@ const BankBibit = ({ onNavigateBack, onOrder, userId = 1 }) => {
     const stockStatus = getStockStatus(selectedVegetable.stockAvailable);
 
     return (
-      <div className="min-h-screen bg-[#E0E5EC] pb-8">
+      <div className="min-h-screen bg-transparent pb-8">
         <div className="px-6 pt-8 pb-4">
           <button
             onClick={() => setSelectedVegetable(null)}
-            className="neo-button w-10 h-10 flex items-center justify-center mb-4"
+            className="neo-button w-10 h-10 flex items-center justify-center mb-4 border border-white/45"
           >
             <Icon name="arrowLeft" size={20} color="#6B7280" />
           </button>
@@ -98,7 +98,7 @@ const BankBibit = ({ onNavigateBack, onOrder, userId = 1 }) => {
         </div>
 
         <div className="px-6 space-y-5">
-          <div className="neo-card p-6">
+          <div className="neo-card p-6 border border-white/45">
             <div className="w-full h-48 neo-inset rounded-2xl flex items-center justify-center mb-4">
               <Icon name={getCategoryIcon(selectedVegetable.category)} size={80} color="#4CAF50" />
             </div>
@@ -135,7 +135,7 @@ const BankBibit = ({ onNavigateBack, onOrder, userId = 1 }) => {
             </div>
           </div>
 
-          <div className="neo-card p-5">
+          <div className="neo-card p-5 border border-white/45">
             <h3 className="font-bold text-gray-800 mb-3">Kandungan Gizi</h3>
             <div className="space-y-2">
               <div className="neo-inset p-3 rounded-xl flex justify-between">
@@ -153,7 +153,7 @@ const BankBibit = ({ onNavigateBack, onOrder, userId = 1 }) => {
             </div>
           </div>
 
-          <div className="neo-card p-5">
+          <div className="neo-card p-5 border border-white/45">
             <div className="flex items-center gap-3 mb-3">
               <Icon name="sun" size={20} color="#F59E0B" />
               <h3 className="font-bold text-gray-800">Tips Menanam</h3>
@@ -161,7 +161,7 @@ const BankBibit = ({ onNavigateBack, onOrder, userId = 1 }) => {
             <p className="text-sm text-gray-600 leading-relaxed">{selectedVegetable.tips}</p>
           </div>
 
-          <div className="neo-card p-5">
+          <div className="neo-card p-5 border border-white/45">
             <h3 className="font-bold text-gray-800 mb-4">Pesan Bibit</h3>
 
             <div className="mb-4">
@@ -169,7 +169,7 @@ const BankBibit = ({ onNavigateBack, onOrder, userId = 1 }) => {
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => setOrderQuantity(Math.max(1, orderQuantity - 5))}
-                  className="neo-button w-12 h-12 flex items-center justify-center"
+                   className="neo-button w-12 h-12 flex items-center justify-center border border-white/40"
                 >
                   <Icon name="minus" size={20} color="#6B7280" />
                 </button>
@@ -178,7 +178,7 @@ const BankBibit = ({ onNavigateBack, onOrder, userId = 1 }) => {
                 </div>
                 <button
                   onClick={() => setOrderQuantity(Math.min(selectedVegetable.stockAvailable, orderQuantity + 5))}
-                  className="neo-button w-12 h-12 flex items-center justify-center"
+                   className="neo-button w-12 h-12 flex items-center justify-center border border-white/40"
                 >
                   <Icon name="plus" size={20} color="#6B7280" />
                 </button>
@@ -212,7 +212,7 @@ const BankBibit = ({ onNavigateBack, onOrder, userId = 1 }) => {
                 transition-all
                 ${loading
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-green-500 text-white active:neo-button-active shadow-neo-button'
+                  : 'bg-gradient-to-r from-green-600 to-green-500 text-white active:neo-button-active shadow-green'
                 }
               `}
             >
@@ -239,11 +239,11 @@ const BankBibit = ({ onNavigateBack, onOrder, userId = 1 }) => {
   }
 
   return (
-    <div className="min-h-screen bg-[#E0E5EC] pb-8">
-      <div className="px-6 pt-8 pb-4 sticky top-0 bg-[#E0E5EC] z-10">
+    <div className="min-h-screen bg-transparent pb-8">
+      <div className="px-6 pt-8 pb-4 sticky top-0 bg-[#edf2ea]/85 backdrop-blur-md z-10 border-b border-white/35">
         <button
           onClick={onNavigateBack}
-          className="neo-button w-10 h-10 flex items-center justify-center mb-4"
+          className="neo-button w-10 h-10 flex items-center justify-center mb-4 border border-white/45"
         >
           <Icon name="arrowLeft" size={20} color="#6B7280" />
         </button>
@@ -271,7 +271,7 @@ const BankBibit = ({ onNavigateBack, onOrder, userId = 1 }) => {
                 flex items-center gap-2 px-4 py-2 rounded-xl whitespace-nowrap
                 transition-all font-medium text-sm
                 ${selectedCategory === cat.id
-                  ? 'neo-button text-green-500'
+                  ? 'neo-button text-green-500 border border-white/45'
                   : 'neo-inset text-gray-500'
                 }
               `}
@@ -291,7 +291,7 @@ const BankBibit = ({ onNavigateBack, onOrder, userId = 1 }) => {
         )}
 
         {error && (
-          <div className="neo-card p-4 border-l-4 border-red-500 bg-red-50">
+          <div className="neo-card p-4 border-l-4 border-red-500 bg-red-50 border border-red-100">
             <div className="flex items-center gap-3">
               <Icon name="errorCircle" size={20} color="#EF4444" />
               <p className="text-sm text-red-600">Error: {error}</p>
@@ -312,7 +312,7 @@ const BankBibit = ({ onNavigateBack, onOrder, userId = 1 }) => {
                   <button
                     key={vegetable.id}
                     onClick={() => setSelectedVegetable(vegetable)}
-                    className="neo-card p-4 text-left active:neo-button-active transition-all"
+                    className="neo-card p-4 text-left active:neo-button-active transition-all border border-white/45"
                   >
                     <div className="w-full h-28 neo-inset rounded-xl flex items-center justify-center mb-3">
                       <Icon name={getCategoryIcon(vegetable.category)} size={48} color="#4CAF50" />

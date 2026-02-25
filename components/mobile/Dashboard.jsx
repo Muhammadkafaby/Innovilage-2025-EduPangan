@@ -1,20 +1,19 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Icon from '../shared/Icon';
 import Badge, { CountBadge } from '../shared/Badge';
-import { Skeleton, StatSkeleton } from '../shared/Skeleton';
 import { useGardenData } from '../../hooks/useGardenData';
 import { useNotifications } from '../../hooks/useNotifications';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { vegetables } from '../../data/staticData';
 
-const Dashboard = ({ user, onNavigate, onLogout }) => {
+const Dashboard = ({ user, onNavigate }) => {
   const [activeTab, setActiveTab] = useState('home');
   const containerRef = useRef(null);
 
-  const { stats, activities, plants, clearAllData } = useGardenData();
-  const { unreadCount, notifications } = useNotifications();
+  const { stats } = useGardenData();
+  const { unreadCount } = useNotifications();
 
   const userGarden = {
     activePlants: stats.activePlants || 0,
@@ -39,6 +38,13 @@ const Dashboard = ({ user, onNavigate, onLogout }) => {
 
   const { isRefreshing, pullDistance, bindEvents } = usePullToRefresh(handleRefresh);
 
+  useEffect(() => {
+    const cleanup = bindEvents(containerRef.current);
+    return () => {
+      if (cleanup) cleanup();
+    };
+  }, [bindEvents]);
+
   const getVegetableIcon = (category) => {
     if (category?.includes('Hijau')) return 'chart';
     if (category?.includes('Bumbu')) return 'fire';
@@ -62,10 +68,18 @@ const Dashboard = ({ user, onNavigate, onLogout }) => {
   ];
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-[#E0E5EC] pb-24">
+    <div ref={containerRef} className="min-h-screen bg-transparent pb-24 relative">
+      {pullDistance > 0 && !isRefreshing && (
+        <div className="fixed top-2 left-0 right-0 z-40 flex justify-center pointer-events-none">
+          <div className="neo-card-sm px-4 py-2 text-xs text-gray-600 border border-white/45">
+            Tarik untuk memperbarui
+          </div>
+        </div>
+      )}
+
       {isRefreshing && (
         <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4">
-          <div className="neo-card-sm px-4 py-2 flex items-center gap-2">
+          <div className="neo-card-sm px-4 py-2 flex items-center gap-2 border border-white/45">
             <Icon name="refresh" size={16} className="animate-spin text-green-500" />
             <span className="text-sm text-gray-600">Memperbarui...</span>
           </div>
@@ -82,10 +96,11 @@ const Dashboard = ({ user, onNavigate, onLogout }) => {
             <h1 className="text-2xl font-bold text-gray-800">
               Halo, <span className="text-green-500">{user?.name || 'Petani'}</span>
             </h1>
+            <p className="text-xs text-gray-500 mt-1">Pantau kebun, panen, dan aktivitas harian Anda</p>
           </div>
           <button
             onClick={() => onNavigate('profil')}
-            className="relative neo-button w-12 h-12 flex items-center justify-center"
+            className="relative neo-button w-12 h-12 flex items-center justify-center border border-white/45"
           >
             <Icon name="bell" size={24} color="#6B7280" />
             {unreadCount > 0 && (
@@ -97,7 +112,7 @@ const Dashboard = ({ user, onNavigate, onLogout }) => {
         <div className="grid grid-cols-2 gap-4 mb-6">
           <button
             onClick={() => onNavigate('kebun')}
-            className="neo-card p-4 text-left hover:scale-[1.02] transition-transform"
+            className="neo-card p-4 text-left hover:scale-[1.02] transition-transform border border-white/45"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="w-10 h-10 neo-inset rounded-xl flex items-center justify-center">
@@ -111,7 +126,7 @@ const Dashboard = ({ user, onNavigate, onLogout }) => {
 
           <button
             onClick={() => onNavigate('catat-panen')}
-            className="neo-card p-4 text-left hover:scale-[1.02] transition-transform"
+            className="neo-card p-4 text-left hover:scale-[1.02] transition-transform border border-white/45"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="w-10 h-10 neo-inset rounded-xl flex items-center justify-center">
@@ -126,7 +141,7 @@ const Dashboard = ({ user, onNavigate, onLogout }) => {
       </div>
 
       <div className="px-6 space-y-5">
-        <div className="neo-card p-5">
+        <div className="neo-card p-5 border border-white/45">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-gray-800">Aksi Cepat</h3>
             <Icon name="grid" size={18} color="#9CA3AF" />
@@ -136,7 +151,7 @@ const Dashboard = ({ user, onNavigate, onLogout }) => {
               <button
                 key={action.id}
                 onClick={() => onNavigate(action.id)}
-                className="neo-button p-3 flex flex-col items-center gap-2 active:neo-button-active"
+                className="neo-button p-3 flex flex-col items-center gap-2 active:neo-button-active border border-white/40"
               >
                 <Icon
                   name={action.icon}
@@ -155,7 +170,7 @@ const Dashboard = ({ user, onNavigate, onLogout }) => {
           </div>
         </div>
 
-        <div className="neo-card p-5">
+        <div className="neo-card p-5 border border-white/45">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-gray-800">Status Kebun</h3>
             <button
@@ -213,7 +228,7 @@ const Dashboard = ({ user, onNavigate, onLogout }) => {
           </div>
         </div>
 
-        <div className="neo-card p-5">
+        <div className="neo-card p-5 border border-white/45">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-gray-800">Bibit Tersedia</h3>
             <button
@@ -230,7 +245,7 @@ const Dashboard = ({ user, onNavigate, onLogout }) => {
               <button
                 key={idx}
                 onClick={() => onNavigate('bank-bibit')}
-                className="neo-button p-3 text-center active:neo-button-active"
+                className="neo-button p-3 text-center active:neo-button-active border border-white/40"
               >
                 <div className="w-10 h-10 neo-inset rounded-xl flex items-center justify-center mx-auto mb-2">
                   <Icon
@@ -246,7 +261,7 @@ const Dashboard = ({ user, onNavigate, onLogout }) => {
           </div>
         </div>
 
-        <div className="neo-card p-5">
+        <div className="neo-card p-5 border border-white/45">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
               <Icon name="heart" size={20} color="#F97316" />
@@ -272,7 +287,7 @@ const Dashboard = ({ user, onNavigate, onLogout }) => {
               </div>
               <button
                 onClick={() => onNavigate('menu-gizi')}
-                className="bg-orange-500 text-white px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1"
+                className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1"
               >
                 <Icon name="arrowRight" size={14} color="white" />
                 Resep
@@ -281,7 +296,7 @@ const Dashboard = ({ user, onNavigate, onLogout }) => {
           </div>
         </div>
 
-        <div className="neo-card p-5">
+        <div className="neo-card p-5 border border-white/45">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-gray-800">Aktivitas Terbaru</h3>
             <Icon name="clock" size={18} color="#9CA3AF" />
@@ -333,8 +348,8 @@ const Dashboard = ({ user, onNavigate, onLogout }) => {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-[#E0E5EC]/90 backdrop-blur-lg border-t border-white/20 px-4 py-3 safe-bottom">
-        <div className="max-w-md mx-auto flex justify-around items-center">
+      <div className="fixed bottom-0 left-0 right-0 px-4 py-3 safe-bottom pointer-events-none">
+        <div className="max-w-md mx-auto neo-card-sm border border-white/45 backdrop-blur-md bg-white/35 pointer-events-auto px-2 py-2 rounded-2xl flex justify-around items-center">
           {navItems.map((item) => (
             <button
               key={item.id}

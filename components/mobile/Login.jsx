@@ -43,21 +43,26 @@ const Login = ({ onLogin, onNavigateToRegister }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#E0E5EC] flex flex-col">
+    <div className="min-h-screen bg-transparent flex flex-col">
       <div className="flex-1 flex flex-col justify-center px-6 py-12">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 neo-card mb-4">
+          <div className="inline-flex items-center justify-center w-20 h-20 neo-card mb-4 border border-white/45">
             <Icon name="sparkles" size={40} color="#4CAF50" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Smart <span className="text-green-500">Watering</span>
+          <h1 className="text-3xl font-extrabold text-gray-800 mb-2">
+            Edu<span className="text-green-600">Pangan</span>
           </h1>
-          <p className="text-gray-500 text-sm">
-            Sistem Penyiraman Otomatis
+          <p className="text-gray-500 text-sm font-semibold tracking-wide">
+            Masuk ke kebun pintar Anda
           </p>
         </div>
 
-        <div className="neo-card p-6 max-w-md mx-auto w-full">
+        <div className="neo-card p-6 max-w-md mx-auto w-full border border-white/45">
+          <div className="mb-5 p-3 rounded-2xl bg-white/35 border border-white/40">
+            <p className="text-xs text-gray-600">
+              Pilih device aktif untuk melihat kelembapan tanah dan kontrol pompa secara real-time.
+            </p>
+          </div>
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -121,7 +126,7 @@ const Login = ({ onLogin, onNavigateToRegister }) => {
                 transition-all duration-200
                 ${isLoading || !selectedDevice || !userName.trim()
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-green-500 text-white hover:bg-green-600 active:neo-button-active shadow-neo-button'
+                  : 'bg-gradient-to-r from-green-600 to-green-500 text-white hover:from-green-700 hover:to-green-600 shadow-green'
                 }
               `}
             >
@@ -141,7 +146,7 @@ const Login = ({ onLogin, onNavigateToRegister }) => {
         </div>
 
         <div className="mt-6 max-w-md mx-auto w-full">
-          <div className="neo-card-sm p-4 flex items-start gap-3">
+          <div className="neo-card-sm p-4 flex items-start gap-3 border border-white/40">
             <div className="flex-shrink-0">
               <div className="w-10 h-10 neo-button flex items-center justify-center">
                 <Icon name="info" size={20} color="#3B82F6" />
@@ -172,10 +177,10 @@ const Login = ({ onLogin, onNavigateToRegister }) => {
         </div>
       </div>
 
-      <div className="text-center py-6 border-t border-gray-200">
+      <div className="text-center py-6 border-t border-gray-200/70 bg-white/20">
         <div className="flex items-center justify-center gap-2 text-gray-400 text-xs">
           <Icon name="sparkles" size={14} />
-          <span>Smart Watering System v3.2</span>
+          <span>Smart Food Village v1.0</span>
         </div>
         <p className="text-xs text-gray-400 mt-1">EduPangan x Telyuk</p>
       </div>

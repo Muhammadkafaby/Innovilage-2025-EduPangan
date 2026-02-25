@@ -54,7 +54,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'Nunito Sans', 'system-ui', 'sans-serif'],
+        sans: ['Plus Jakarta Sans', 'Nunito Sans', 'system-ui', 'sans-serif'],
       },
       animation: {
         'bounce-slow': 'bounce 2s infinite',
