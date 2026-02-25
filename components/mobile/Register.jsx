@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+'use client';
 
-/**
- * Register Component
- * Form pendaftaran untuk pengguna baru
- * Input: Nama, RW, Nomor HP, Kode Kader, PIN
- */
+import React, { useState } from 'react';
+import Icon from '../shared/Icon';
+
 const Register = ({ onRegister, onNavigateToLogin }) => {
   const [formData, setFormData] = useState({
     fullName: '',
@@ -16,6 +14,7 @@ const Register = ({ onRegister, onNavigateToLogin }) => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showPin, setShowPin] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -23,7 +22,6 @@ const Register = ({ onRegister, onNavigateToLogin }) => {
       ...prev,
       [name]: value,
     }));
-    // Clear error saat user mulai mengetik
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
@@ -69,7 +67,6 @@ const Register = ({ onRegister, onNavigateToLogin }) => {
 
     setIsLoading(true);
 
-    // Simulasi API call
     setTimeout(() => {
       setIsLoading(false);
       onRegister && onRegister(formData);
@@ -77,216 +74,243 @@ const Register = ({ onRegister, onNavigateToLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-yellow-50 pb-8">
-      {/* Header */}
-      <div className="bg-green-500 pt-8 pb-20 px-6 rounded-b-[3rem] shadow-lg">
+    <div className="min-h-screen bg-[#E0E5EC] pb-8">
+      <div className="px-6 pt-8 pb-4">
         <button
           onClick={onNavigateToLogin}
-          className="text-white mb-4 flex items-center text-sm font-medium"
+          className="neo-button w-10 h-10 flex items-center justify-center mb-4"
         >
-          <span className="mr-2">←</span> Kembali
+          <Icon name="arrowLeft" size={20} color="#6B7280" />
         </button>
-        <h1 className="text-3xl font-bold text-white mb-2">
-          Daftar Akun Baru
-        </h1>
-        <p className="text-green-100 text-sm">
-          Bergabung dengan program EduPangan
-        </p>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">Daftar Akun</h1>
+        <p className="text-gray-500 text-sm">Bergabung dengan program EduPangan</p>
       </div>
 
-      {/* Form Container */}
-      <div className="px-6 -mt-12">
-        <div className="bg-white rounded-2xl shadow-xl p-6">
+      <div className="px-6">
+        <div className="neo-card p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Full Name */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Nama Lengkap <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleChange}
-                placeholder="Ibu Siti Aminah"
-                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-green-200 transition-all outline-none ${
-                  errors.fullName
-                    ? 'border-red-300 focus:border-red-500'
-                    : 'border-gray-200 focus:border-green-500'
-                }`}
-                required
-              />
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Icon name="user" size={18} />
+                </div>
+                <input
+                  type="text"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  placeholder="Ibu Siti Aminah"
+                  className={`w-full pl-12 pr-4 py-3 neo-input text-gray-800 placeholder-gray-400 ${
+                    errors.fullName ? 'ring-2 ring-red-300' : ''
+                  }`}
+                  required
+                />
+              </div>
               {errors.fullName && (
-                <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <Icon name="warning" size={12} color="#EF4444" />
+                  {errors.fullName}
+                </p>
               )}
             </div>
 
-            {/* RW Selection */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 RW <span className="text-red-500">*</span>
               </label>
-              <select
-                name="rw"
-                value={formData.rw}
-                onChange={handleChange}
-                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-green-200 transition-all outline-none appearance-none bg-white ${
-                  errors.rw
-                    ? 'border-red-300 focus:border-red-500'
-                    : 'border-gray-200 focus:border-green-500'
-                }`}
-                required
-              >
-                <option value="">Pilih RW</option>
-                <option value="01">RW 01</option>
-                <option value="02">RW 02</option>
-                <option value="03">RW 03</option>
-                <option value="04">RW 04</option>
-                <option value="05">RW 05</option>
-                <option value="06">RW 06</option>
-                <option value="07">RW 07</option>
-                <option value="08">RW 08</option>
-              </select>
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Icon name="location" size={18} />
+                </div>
+                <select
+                  name="rw"
+                  value={formData.rw}
+                  onChange={handleChange}
+                  className={`w-full pl-12 pr-10 py-3 neo-input text-gray-800 appearance-none bg-transparent ${
+                    errors.rw ? 'ring-2 ring-red-300' : ''
+                  }`}
+                  required
+                >
+                  <option value="">Pilih RW</option>
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                    <option key={n} value={String(n).padStart(2, '0')}>
+                      RW {String(n).padStart(2, '0')}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <Icon name="chevronDown" size={18} color="#9CA3AF" />
+                </div>
+              </div>
               {errors.rw && (
-                <p className="text-red-500 text-xs mt-1">{errors.rw}</p>
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <Icon name="warning" size={12} color="#EF4444" />
+                  {errors.rw}
+                </p>
               )}
             </div>
 
-            {/* Phone Number */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Nomor HP <span className="text-red-500">*</span>
               </label>
-              <input
-                type="tel"
-                name="phoneNumber"
-                value={formData.phoneNumber}
-                onChange={(e) =>
-                  handleChange({
-                    target: {
-                      name: 'phoneNumber',
-                      value: e.target.value.replace(/\D/g, ''),
-                    },
-                  })
-                }
-                placeholder="081234567890"
-                maxLength="13"
-                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-green-200 transition-all outline-none ${
-                  errors.phoneNumber
-                    ? 'border-red-300 focus:border-red-500'
-                    : 'border-gray-200 focus:border-green-500'
-                }`}
-                required
-              />
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Icon name="phone" size={18} />
+                </div>
+                <input
+                  type="tel"
+                  name="phoneNumber"
+                  value={formData.phoneNumber}
+                  onChange={(e) =>
+                    handleChange({
+                      target: {
+                        name: 'phoneNumber',
+                        value: e.target.value.replace(/\D/g, ''),
+                      },
+                    })
+                  }
+                  placeholder="081234567890"
+                  maxLength={13}
+                  className={`w-full pl-12 pr-4 py-3 neo-input text-gray-800 placeholder-gray-400 ${
+                    errors.phoneNumber ? 'ring-2 ring-red-300' : ''
+                  }`}
+                  required
+                />
+              </div>
               {errors.phoneNumber && (
-                <p className="text-red-500 text-xs mt-1">{errors.phoneNumber}</p>
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <Icon name="warning" size={12} color="#EF4444" />
+                  {errors.phoneNumber}
+                </p>
               )}
             </div>
 
-            {/* Kader Code */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Kode Kader <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                name="kaderCode"
-                value={formData.kaderCode}
-                onChange={(e) =>
-                  handleChange({
-                    target: {
-                      name: 'kaderCode',
-                      value: e.target.value.toUpperCase(),
-                    },
-                  })
-                }
-                placeholder="Contoh: PKK2025"
-                maxLength="10"
-                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-green-200 transition-all outline-none ${
-                  errors.kaderCode
-                    ? 'border-red-300 focus:border-red-500'
-                    : 'border-gray-200 focus:border-green-500'
-                }`}
-                required
-              />
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Icon name="id" size={18} />
+                </div>
+                <input
+                  type="text"
+                  name="kaderCode"
+                  value={formData.kaderCode}
+                  onChange={(e) =>
+                    handleChange({
+                      target: {
+                        name: 'kaderCode',
+                        value: e.target.value.toUpperCase(),
+                      },
+                    })
+                  }
+                  placeholder="Contoh: PKK2025"
+                  maxLength={10}
+                  className={`w-full pl-12 pr-4 py-3 neo-input text-gray-800 placeholder-gray-400 ${
+                    errors.kaderCode ? 'ring-2 ring-red-300' : ''
+                  }`}
+                  required
+                />
+              </div>
               {errors.kaderCode && (
-                <p className="text-red-500 text-xs mt-1">{errors.kaderCode}</p>
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <Icon name="warning" size={12} color="#EF4444" />
+                  {errors.kaderCode}
+                </p>
               )}
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                <Icon name="info" size={12} />
                 Hubungi kader PKK untuk mendapatkan kode
               </p>
             </div>
 
-            {/* PIN */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Buat PIN <span className="text-red-500">*</span>
               </label>
-              <input
-                type="password"
-                name="pin"
-                value={formData.pin}
-                onChange={(e) =>
-                  handleChange({
-                    target: {
-                      name: 'pin',
-                      value: e.target.value.replace(/\D/g, ''),
-                    },
-                  })
-                }
-                placeholder="4-6 digit"
-                maxLength="6"
-                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-green-200 transition-all outline-none tracking-widest ${
-                  errors.pin
-                    ? 'border-red-300 focus:border-red-500'
-                    : 'border-gray-200 focus:border-green-500'
-                }`}
-                required
-              />
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Icon name="lock" size={18} />
+                </div>
+                <input
+                  type={showPin ? 'text' : 'password'}
+                  name="pin"
+                  value={formData.pin}
+                  onChange={(e) =>
+                    handleChange({
+                      target: {
+                        name: 'pin',
+                        value: e.target.value.replace(/\D/g, ''),
+                      },
+                    })
+                  }
+                  placeholder="4-6 digit"
+                  maxLength={6}
+                  className={`w-full pl-12 pr-12 py-3 neo-input text-gray-800 placeholder-gray-400 tracking-widest ${
+                    errors.pin ? 'ring-2 ring-red-300' : ''
+                  }`}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPin(!showPin)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+                >
+                  <Icon name={showPin ? 'eyeSlash' : 'eye'} size={18} />
+                </button>
+              </div>
               {errors.pin && (
-                <p className="text-red-500 text-xs mt-1">{errors.pin}</p>
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <Icon name="warning" size={12} color="#EF4444" />
+                  {errors.pin}
+                </p>
               )}
             </div>
 
-            {/* Confirm PIN */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Konfirmasi PIN <span className="text-red-500">*</span>
               </label>
-              <input
-                type="password"
-                name="confirmPin"
-                value={formData.confirmPin}
-                onChange={(e) =>
-                  handleChange({
-                    target: {
-                      name: 'confirmPin',
-                      value: e.target.value.replace(/\D/g, ''),
-                    },
-                  })
-                }
-                placeholder="Ulangi PIN"
-                maxLength="6"
-                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-green-200 transition-all outline-none tracking-widest ${
-                  errors.confirmPin
-                    ? 'border-red-300 focus:border-red-500'
-                    : 'border-gray-200 focus:border-green-500'
-                }`}
-                required
-              />
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Icon name="lock" size={18} />
+                </div>
+                <input
+                  type={showPin ? 'text' : 'password'}
+                  name="confirmPin"
+                  value={formData.confirmPin}
+                  onChange={(e) =>
+                    handleChange({
+                      target: {
+                        name: 'confirmPin',
+                        value: e.target.value.replace(/\D/g, ''),
+                      },
+                    })
+                  }
+                  placeholder="Ulangi PIN"
+                  maxLength={6}
+                  className={`w-full pl-12 pr-4 py-3 neo-input text-gray-800 placeholder-gray-400 tracking-widest ${
+                    errors.confirmPin ? 'ring-2 ring-red-300' : ''
+                  }`}
+                  required
+                />
+              </div>
               {errors.confirmPin && (
-                <p className="text-red-500 text-xs mt-1">{errors.confirmPin}</p>
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <Icon name="warning" size={12} color="#EF4444" />
+                  {errors.confirmPin}
+                </p>
               )}
             </div>
 
-            {/* Terms */}
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <div className="neo-inset p-3 rounded-xl">
               <label className="flex items-start text-xs text-gray-700">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 mr-2"
-                  required
-                />
+                <input type="checkbox" className="mt-0.5 mr-2" required />
                 <span>
                   Saya setuju untuk mengikuti program EduPangan dan bersedia
                   mengelola pekarangan rumah untuk ketahanan pangan keluarga
@@ -294,52 +318,39 @@ const Register = ({ onRegister, onNavigateToLogin }) => {
               </label>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full py-4 rounded-xl font-semibold text-white transition-all shadow-lg ${
-                isLoading
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-green-500 hover:bg-green-600 active:scale-95'
-              }`}
+              className={`
+                w-full py-4 rounded-xl font-semibold
+                flex items-center justify-center gap-2
+                transition-all
+                ${isLoading
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-green-500 text-white active:neo-button-active shadow-neo-button'
+                }
+              `}
             >
               {isLoading ? (
-                <span className="flex items-center justify-center">
-                  <svg
-                    className="animate-spin h-5 w-5 mr-3"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
+                <>
+                  <Icon name="refresh" size={20} className="animate-spin" />
                   Mendaftar...
-                </span>
+                </>
               ) : (
-                'Daftar Sekarang'
+                <>
+                  <Icon name="sparkles" size={20} color="white" />
+                  Daftar Sekarang
+                </>
               )}
             </button>
           </form>
 
-          {/* Login Link */}
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-500">
               Sudah punya akun?{' '}
               <button
                 onClick={onNavigateToLogin}
-                className="text-green-600 font-semibold hover:text-green-700"
+                className="text-green-500 font-semibold hover:text-green-600"
               >
                 Masuk di sini
               </button>

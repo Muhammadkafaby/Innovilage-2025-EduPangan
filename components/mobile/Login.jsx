@@ -1,11 +1,9 @@
+'use client';
+
 import React, { useState } from 'react';
+import Icon from '../shared/Icon';
 import { getDeviceOptions, getDeviceCredentials } from '../../lib/mqttConfig';
 
-/**
- * Login Component
- * Halaman login dengan pilihan Device ID (1-26)
- * Menggunakan kredensial MQTT: Telyuk_XXX / Telyuk_XXX_Sukses
- */
 const Login = ({ onLogin, onNavigateToRegister }) => {
   const [selectedDevice, setSelectedDevice] = useState('');
   const [userName, setUserName] = useState('');
@@ -30,10 +28,8 @@ const Login = ({ onLogin, onNavigateToRegister }) => {
 
     setIsLoading(true);
 
-    // Get MQTT credentials for the selected device
     const credentials = getDeviceCredentials(parseInt(selectedDevice));
 
-    // Simulate connection test (actual MQTT connection will be done in Dashboard)
     setTimeout(() => {
       setIsLoading(false);
       onLogin && onLogin({
@@ -46,60 +42,54 @@ const Login = ({ onLogin, onNavigateToRegister }) => {
     }, 1000);
   };
 
-  const selectedCredentials = selectedDevice
-    ? getDeviceCredentials(parseInt(selectedDevice))
-    : null;
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-yellow-50 flex flex-col">
-      {/* Header */}
-      <div className="bg-green-500 pt-12 pb-24 px-6 rounded-b-[3rem] shadow-lg">
-        <div className="flex justify-center mb-4">
-          <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-md">
-            <span className="text-4xl">🌱</span>
+    <div className="min-h-screen bg-[#E0E5EC] flex flex-col">
+      <div className="flex-1 flex flex-col justify-center px-6 py-12">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 neo-card mb-4">
+            <Icon name="sparkles" size={40} color="#4CAF50" />
           </div>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            Smart <span className="text-green-500">Watering</span>
+          </h1>
+          <p className="text-gray-500 text-sm">
+            Sistem Penyiraman Otomatis
+          </p>
         </div>
-        <h1 className="text-3xl font-bold text-white text-center mb-2">
-          Smart Watering
-        </h1>
-        <p className="text-green-100 text-center text-sm">
-          Pilih device untuk mulai monitoring
-        </p>
-      </div>
 
-      {/* Form Container */}
-      <div className="flex-1 px-6 -mt-16">
-        <div className="bg-white rounded-2xl shadow-xl p-6">
+        <div className="neo-card p-6 max-w-md mx-auto w-full">
           <form onSubmit={handleLogin} className="space-y-5">
-            {/* User Name Input */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Nama Anda
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-3.5 text-gray-400">👩</span>
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Icon name="user" size={20} />
+                </div>
                 <input
                   type="text"
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
                   placeholder="Contoh: Ibu Siti Aminah"
-                  className="w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none text-gray-800"
+                  className="w-full pl-12 pr-4 py-3.5 neo-input text-gray-800 placeholder-gray-400"
                   required
                 />
               </div>
             </div>
 
-            {/* Device Selection */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Pilih Device
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-3.5 text-gray-400">📡</span>
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Icon name="deviceMobile" size={20} />
+                </div>
                 <select
                   value={selectedDevice}
                   onChange={(e) => setSelectedDevice(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none text-gray-800 bg-white appearance-none cursor-pointer"
+                  className="w-full pl-12 pr-10 py-3.5 neo-input text-gray-800 appearance-none cursor-pointer bg-transparent"
                   required
                 >
                   <option value="">-- Pilih Device (1-26) --</option>
@@ -109,60 +99,54 @@ const Login = ({ onLogin, onNavigateToRegister }) => {
                     </option>
                   ))}
                 </select>
-                <span className="absolute right-4 top-3.5 text-gray-400 pointer-events-none">▼</span>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                  <Icon name="chevronDown" size={20} />
+                </div>
               </div>
             </div>
 
-            {/* Error Message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                ⚠️ {error}
+              <div className="neo-inset p-3 rounded-xl flex items-center gap-3 bg-red-50 border-l-4 border-red-500">
+                <Icon name="warning" size={20} color="#EF4444" />
+                <p className="text-sm text-red-700">{error}</p>
               </div>
             )}
 
-            {/* Login Button */}
             <button
               type="submit"
               disabled={isLoading || !selectedDevice || !userName.trim()}
-              className={`w-full py-4 rounded-xl font-semibold text-white transition-all shadow-lg ${isLoading || !selectedDevice || !userName.trim()
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-green-500 hover:bg-green-600 active:scale-95'
-                }`}
+              className={`
+                w-full py-4 rounded-xl font-semibold
+                flex items-center justify-center gap-2
+                transition-all duration-200
+                ${isLoading || !selectedDevice || !userName.trim()
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-green-500 text-white hover:bg-green-600 active:neo-button-active shadow-neo-button'
+                }
+              `}
             >
               {isLoading ? (
-                <span className="flex items-center justify-center">
-                  <svg
-                    className="animate-spin h-5 w-5 mr-3"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Menghubungkan...
-                </span>
+                <>
+                  <Icon name="refresh" size={20} className="animate-spin" />
+                  <span>Menghubungkan...</span>
+                </>
               ) : (
-                'Masuk ke Dashboard'
+                <>
+                  <Icon name="arrowRight" size={20} />
+                  <span>Masuk ke Dashboard</span>
+                </>
               )}
             </button>
           </form>
         </div>
 
-        {/* Info Box */}
-        <div className="mt-6 bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4">
-          <div className="flex items-start">
-            <span className="text-2xl mr-3">💡</span>
+        <div className="mt-6 max-w-md mx-auto w-full">
+          <div className="neo-card-sm p-4 flex items-start gap-3">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 neo-button flex items-center justify-center">
+                <Icon name="info" size={20} color="#3B82F6" />
+              </div>
+            </div>
             <div>
               <h3 className="font-semibold text-gray-800 text-sm mb-1">
                 Tentang Device
@@ -174,12 +158,26 @@ const Login = ({ onLogin, onNavigateToRegister }) => {
             </div>
           </div>
         </div>
+
+        <div className="mt-8 text-center">
+          <p className="text-sm text-gray-500">
+            Belum punya akun?{' '}
+            <button
+              onClick={onNavigateToRegister}
+              className="text-green-500 font-semibold hover:text-green-600"
+            >
+              Daftar di sini
+            </button>
+          </p>
+        </div>
       </div>
 
-      {/* Footer */}
-      <div className="text-center py-6 text-xs text-gray-500">
-        <p>Smart Watering System v3.2</p>
-        <p className="mt-1">EduPangan × Telyuk</p>
+      <div className="text-center py-6 border-t border-gray-200">
+        <div className="flex items-center justify-center gap-2 text-gray-400 text-xs">
+          <Icon name="sparkles" size={14} />
+          <span>Smart Watering System v3.2</span>
+        </div>
+        <p className="text-xs text-gray-400 mt-1">EduPangan x Telyuk</p>
       </div>
     </div>
   );

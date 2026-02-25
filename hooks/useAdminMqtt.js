@@ -177,7 +177,7 @@ export function useAdminMqtt() {
     totalDevices: Object.keys(devices).length,
     onlineDevices: Object.values(devices).filter(d => d.online).length,
     offlineDevices: Object.values(devices).filter(d => !d.online).length,
-    pumpOnCount: Object.values(devices).filter(d => d.pumpStatus === 'NYALA' || d.pumpStatus === 'ON').length,
+    pumpOnCount: Object.values(devices).filter(d => d.pumpStatus === 'NYALA' || d.pumpStatus === 'MATI' || d.pumpStatus === 'ON').length,
     lowMoistureCount: Object.values(devices).filter(d => d.moisture !== null && d.moisture < 30).length,
     averageMoisture: (() => {
       const v = Object.values(devices).filter(d => d.moisture !== null).map(d => d.moisture);

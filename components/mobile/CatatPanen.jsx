@@ -1,15 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Icon from '../shared/Icon';
+import Badge from '../shared/Badge';
 import { vegetables } from '../../data/staticData';
-import { useGardenData } from '../../hooks/useGardenData';
+import { useApi } from '../../hooks/useApi';
 import { useNotifications } from '../../hooks/useNotifications';
 
-/**
- * Catat Panen Component
- * Form untuk mencatat hasil panen dengan data persistence
- */
-const CatatPanen = ({ onNavigateBack, onSubmit }) => {
+const CatatPanen = ({ onNavigateBack, onSubmit, userId = 1 }) => {
   const [formData, setFormData] = useState({
     plantType: '',
     quantity: '',
@@ -20,12 +18,24 @@ const CatatPanen = ({ onNavigateBack, onSubmit }) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
+  const [recentHarvests, setRecentHarvests] = useState([]);
 
-  // Hooks for real data persistence
-  const { addHarvest, harvests } = useGardenData();
+  const { get, post, loading, error } = useApi('/api');
   const { notifyHarvest } = useNotifications();
 
-  // Get list of vegetables for dropdown
+  useEffect(() => {
+    loadRecentHarvests();
+  }, []);
+
+  const loadRecentHarvests = async () => {
+    try {
+      const harvestsData = await get('/garden', { userId, type: 'harvests' });
+      setRecentHarvests(harvestsData || []);
+    } catch (err) {
+      console.error('Failed to load harvests:', err);
+    }
+  };
+
   const plantOptions = vegetables.map((v) => ({
     id: v.id,
     name: v.name,
@@ -81,26 +91,30 @@ const CatatPanen = ({ onNavigateBack, onSubmit }) => {
 
     setIsSubmitting(true);
 
-    // Save to localStorage via hook
-    setTimeout(() => {
-      // Add harvest record to localStorage
-      addHarvest({
-        plantType: formData.plantType,
-        plantName: formData.plantType,
-        quantity: parseFloat(formData.quantity),
-        unit: formData.unit,
-        harvestDate: formData.harvestDate,
-        notes: formData.notes,
-        photo: formData.photo
+    try {
+      await post('/garden', {
+        type: 'harvest',
+        userId: userId,
+        data: {
+          plantType: formData.plantType,
+          plantName: formData.plantType,
+          quantity: parseFloat(formData.quantity),
+          unit: formData.unit,
+          harvestDate: formData.harvestDate,
+          notes: formData.notes,
+          photo: formData.photo,
+        },
       });
 
-      // Create notification
       notifyHarvest(formData.plantType, formData.quantity, formData.unit);
+
+      alert('Catatan panen berhasil disimpan!');
+
+      loadRecentHarvests();
 
       setIsSubmitting(false);
       onSubmit && onSubmit(formData);
 
-      // Reset form
       setFormData({
         plantType: '',
         quantity: '',
@@ -109,253 +123,269 @@ const CatatPanen = ({ onNavigateBack, onSubmit }) => {
         notes: '',
         photo: null,
       });
-    }, 1000);
+    } catch (err) {
+      alert('Gagal menyimpan catatan: ' + (err.message || 'Terjadi kesalahan'));
+      setIsSubmitting(false);
+    }
   };
 
-  // Get recent harvests from real data
-  const recentHarvests = harvests.slice(0, 3).map(h => ({
-    plant: h.plantType || h.plantName,
-    amount: `${h.quantity} ${h.unit}`,
-    date: new Date(h.date || h.harvestDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
-  }));
-
   return (
-    <div className="min-h-screen bg-gray-50 pb-8">
-      {/* Header */}
-      <div className="bg-green-500 pt-8 pb-6 px-6">
+    <div className="min-h-screen bg-[#E0E5EC] pb-8">
+      <div className="px-6 pt-8 pb-4">
         <button
           onClick={onNavigateBack}
-          className="text-white mb-4 flex items-center text-sm font-medium"
+          className="neo-button w-10 h-10 flex items-center justify-center mb-4"
         >
-          <span className="mr-2">←</span> Kembali
+          <Icon name="arrowLeft" size={20} color="#6B7280" />
         </button>
-        <h1 className="text-2xl font-bold text-white mb-2">Catat Panen</h1>
-        <p className="text-green-100 text-sm">
-          Catat hasil panen Anda untuk tracking gizi keluarga
-        </p>
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">Catat Panen</h1>
+        <p className="text-sm text-gray-500">Catat hasil panen untuk tracking gizi keluarga</p>
       </div>
 
-      {/* Form */}
-      <div className="px-6 -mt-2">
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg p-6">
-          {/* Plant Type Selection */}
-          <div className="mb-5">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Jenis Tanaman <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={formData.plantType}
-              onChange={(e) => handleChange('plantType', e.target.value)}
-              className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-green-200 transition-all outline-none appearance-none bg-white ${errors.plantType
-                  ? 'border-red-300 focus:border-red-500'
-                  : 'border-gray-200 focus:border-green-500'
-                }`}
-            >
-              <option value="">Pilih tanaman...</option>
-              {plantOptions.map((plant) => (
-                <option key={plant.id} value={plant.name}>
-                  {plant.name} - {plant.category}
-                </option>
-              ))}
-            </select>
-            {errors.plantType && (
-              <p className="text-red-500 text-xs mt-1">{errors.plantType}</p>
-            )}
-          </div>
-
-          {/* Quantity Input */}
-          <div className="mb-5">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Jumlah Panen <span className="text-red-500">*</span>
-            </label>
-            <div className="flex space-x-3">
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                value={formData.quantity}
-                onChange={(e) => handleChange('quantity', e.target.value)}
-                placeholder="0.0"
-                className={`flex-1 px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-green-200 transition-all outline-none ${errors.quantity
-                    ? 'border-red-300 focus:border-red-500'
-                    : 'border-gray-200 focus:border-green-500'
-                  }`}
-              />
-              <select
-                value={formData.unit}
-                onChange={(e) => handleChange('unit', e.target.value)}
-                className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none bg-white"
-              >
-                <option value="kg">Kg</option>
-                <option value="gram">Gram</option>
-                <option value="ikat">Ikat</option>
-                <option value="buah">Buah</option>
-              </select>
-            </div>
-            {errors.quantity && (
-              <p className="text-red-500 text-xs mt-1">{errors.quantity}</p>
-            )}
-          </div>
-
-          {/* Harvest Date */}
-          <div className="mb-5">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Tanggal Panen
-            </label>
-            <input
-              type="date"
-              value={formData.harvestDate}
-              onChange={(e) => handleChange('harvestDate', e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
-            />
-          </div>
-
-          {/* Photo Upload */}
-          <div className="mb-5">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Foto Hasil Panen (Opsional)
-            </label>
-
-            {formData.photo ? (
-              <div className="relative">
-                <img
-                  src={formData.photo}
-                  alt="Preview"
-                  className="w-full h-48 object-cover rounded-xl"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleChange('photo', null)}
-                  className="absolute top-2 right-2 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-600"
-                >
-                  ✕
-                </button>
-              </div>
-            ) : (
-              <label className="block w-full border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-green-500 transition-colors">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoUpload}
-                  className="hidden"
-                />
-                <span className="text-5xl mb-3 block">📷</span>
-                <p className="text-sm text-gray-600 font-medium">
-                  Tap untuk upload foto
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Maksimal 5MB (JPG, PNG)
-                </p>
+      <div className="px-6 space-y-5">
+        <div className="neo-card p-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Jenis Tanaman <span className="text-red-500">*</span>
               </label>
-            )}
-            {errors.photo && (
-              <p className="text-red-500 text-xs mt-1">{errors.photo}</p>
-            )}
-          </div>
-
-          {/* Notes */}
-          <div className="mb-5">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Catatan Tambahan (Opsional)
-            </label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => handleChange('notes', e.target.value)}
-              placeholder="Contoh: Kualitas bagus, warna hijau segar"
-              rows="3"
-              maxLength="200"
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none resize-none"
-            />
-            <p className="text-xs text-gray-500 text-right mt-1">
-              {formData.notes.length}/200
-            </p>
-          </div>
-
-          {/* Info Box */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-5">
-            <div className="flex items-start">
-              <span className="text-2xl mr-3">💡</span>
-              <div>
-                <h3 className="font-semibold text-gray-800 text-sm mb-1">
-                  Data Tersimpan Otomatis
-                </h3>
-                <p className="text-xs text-gray-700">
-                  Catatan panen Anda akan tersimpan dan muncul di Dashboard
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Icon name="sparkles" size={18} />
+                </div>
+                <select
+                  value={formData.plantType}
+                  onChange={(e) => handleChange('plantType', e.target.value)}
+                  className={`w-full pl-12 pr-10 py-3 neo-input appearance-none bg-transparent text-gray-800 ${
+                    errors.plantType ? 'ring-2 ring-red-300' : ''
+                  }`}
+                >
+                  <option value="">Pilih tanaman...</option>
+                  {plantOptions.map((plant) => (
+                    <option key={plant.id} value={plant.name}>
+                      {plant.name} - {plant.category}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <Icon name="chevronDown" size={18} color="#9CA3AF" />
+                </div>
+              </div>
+              {errors.plantType && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <Icon name="warning" size={12} color="#EF4444" />
+                  {errors.plantType}
                 </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Jumlah Panen <span className="text-red-500">*</span>
+              </label>
+              <div className="flex gap-3">
+                <div className="relative flex-1">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                    <Icon name="chart" size={18} />
+                  </div>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={formData.quantity}
+                    onChange={(e) => handleChange('quantity', e.target.value)}
+                    placeholder="0.0"
+                    className={`w-full pl-12 pr-4 py-3 neo-input text-gray-800 ${
+                      errors.quantity ? 'ring-2 ring-red-300' : ''
+                    }`}
+                  />
+                </div>
+                <select
+                  value={formData.unit}
+                  onChange={(e) => handleChange('unit', e.target.value)}
+                  className="px-4 py-3 neo-input bg-transparent text-gray-800 w-24"
+                >
+                  <option value="kg">Kg</option>
+                  <option value="gram">Gram</option>
+                  <option value="ikat">Ikat</option>
+                  <option value="buah">Buah</option>
+                </select>
+              </div>
+              {errors.quantity && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <Icon name="warning" size={12} color="#EF4444" />
+                  {errors.quantity}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Tanggal Panen
+              </label>
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Icon name="calendar" size={18} />
+                </div>
+                <input
+                  type="date"
+                  value={formData.harvestDate}
+                  onChange={(e) => handleChange('harvestDate', e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                  className="w-full pl-12 pr-4 py-3 neo-input text-gray-800"
+                />
               </div>
             </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Foto Hasil Panen (Opsional)
+              </label>
+
+              {formData.photo ? (
+                <div className="relative">
+                  <img
+                    src={formData.photo}
+                    alt="Preview"
+                    className="w-full h-48 object-cover rounded-2xl neo-inset"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleChange('photo', null)}
+                    className="absolute top-3 right-3 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center neo-button"
+                  >
+                    <Icon name="xmark" size={16} color="white" />
+                  </button>
+                </div>
+              ) : (
+                <label className="block neo-inset rounded-2xl p-8 text-center cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+                  <div className="w-16 h-16 neo-button rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Icon name="camera" size={28} color="#9CA3AF" />
+                  </div>
+                  <p className="text-sm text-gray-600 font-medium">
+                    Tap untuk upload foto
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Maksimal 5MB (JPG, PNG)
+                  </p>
+                </label>
+              )}
+              {errors.photo && (
+                <p className="text-red-500 text-xs mt-1">{errors.photo}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Catatan Tambahan (Opsional)
+              </label>
+              <textarea
+                value={formData.notes}
+                onChange={(e) => handleChange('notes', e.target.value)}
+                placeholder="Contoh: Kualitas bagus, warna hijau segar"
+                rows={3}
+                maxLength={200}
+                className="w-full px-4 py-3 neo-input text-gray-800 resize-none"
+              />
+              <p className="text-xs text-gray-400 text-right mt-1">
+                {formData.notes.length}/200
+              </p>
+            </div>
+
+            <div className="neo-inset p-4 rounded-xl">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 neo-button rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Icon name="info" size={18} color="#3B82F6" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-800 text-sm mb-1">
+                    Data Tersimpan Otomatis
+                  </h3>
+                  <p className="text-xs text-gray-600">
+                    Catatan panen Anda akan tersimpan dan muncul di Dashboard
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className={`
+                w-full py-4 rounded-xl font-semibold
+                flex items-center justify-center gap-2
+                transition-all
+                ${isSubmitting
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-green-500 text-white active:neo-button-active shadow-neo-button'
+                }
+              `}
+            >
+              {isSubmitting ? (
+                <>
+                  <Icon name="refresh" size={20} className="animate-spin" />
+                  Menyimpan...
+                </>
+              ) : (
+                <>
+                  <Icon name="check" size={20} color="white" />
+                  Simpan Catatan Panen
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+
+        <div className="neo-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-gray-800">Panen Terbaru</h3>
+            <Badge>{recentHarvests.length} catatan</Badge>
           </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className={`w-full py-4 rounded-xl font-semibold text-white transition-all shadow-lg ${isSubmitting
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-green-500 hover:bg-green-600 active:scale-95'
-              }`}
-          >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center">
-                <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                Menyimpan...
-              </span>
-            ) : (
-              '✓ Simpan Catatan Panen'
-            )}
-          </button>
-        </form>
-
-        {/* Recent Harvests - using real data */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mt-4">
-          <h3 className="font-bold text-gray-800 mb-4 text-sm">
-            Panen Terbaru Anda
-          </h3>
-          <div className="space-y-3">
-            {recentHarvests.length > 0 ? (
-              recentHarvests.map((harvest, idx) => (
+          {recentHarvests.length > 0 ? (
+            <div className="space-y-3">
+              {recentHarvests.slice(0, 3).map((harvest) => (
                 <div
-                  key={idx}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  key={harvest.id}
+                  className="neo-inset p-4 rounded-xl flex items-center justify-between"
                 >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">✅</span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                      <Icon name="check" size={20} color="#4CAF50" />
+                    </div>
                     <div>
                       <p className="font-semibold text-sm text-gray-800">
-                        {harvest.plant}
+                        {harvest.plantType || harvest.plantName}
                       </p>
-                      <p className="text-xs text-gray-600">{harvest.date}</p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(harvest.date || harvest.harvestDate).toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'short',
+                        })}
+                      </p>
                     </div>
                   </div>
-                  <span className="text-sm font-bold text-green-600">
-                    {harvest.amount}
+                  <span className="text-sm font-bold text-green-500">
+                    {harvest.quantity} {harvest.unit}
                   </span>
                 </div>
-              ))
-            ) : (
-              <div className="text-center py-6 text-gray-500">
-                <span className="text-4xl block mb-2">🌱</span>
-                <p className="text-sm">Belum ada catatan panen</p>
-                <p className="text-xs">Mulai catat hasil panen pertama Anda!</p>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 neo-inset rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <Icon name="document" size={24} color="#9CA3AF" />
               </div>
-            )}
-          </div>
+              <p className="text-gray-500 text-sm">Belum ada catatan panen</p>
+              <p className="text-xs text-gray-400 mt-1">Mulai catat hasil panen pertama Anda!</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,0 +1,227 @@
+/* Neomorphism Design System */
+
+:root {
+  --neo-bg: #E0E5EC;
+  --neo-light: #FFFFFF;
+  --neo-dark: #A3B1C6;
+  --neo-shadow: rgba(163, 177, 198, 0.6);
+  --neo-shadow-light: rgba(255, 255, 255, 0.8);
+  --primary-green: #4CAF50;
+  --primary-green-dark: #388E3C;
+  --accent-orange: #FF9800;
+}
+
+.dark {
+  --neo-bg: #1a1a2e;
+  --neo-light: #2d2d44;
+  --neo-dark: #0f0f1a;
+  --neo-shadow: rgba(0, 0, 0, 0.5);
+  --neo-shadow-light: rgba(60, 60, 80, 0.3);
+}
+
+/* Neomorphism Base */
+.neo-bg {
+  background: var(--neo-bg);
+}
+
+.neo-card {
+  background: var(--neo-bg);
+  box-shadow: 8px 8px 20px var(--neo-shadow), -8px -8px 20px var(--neo-shadow-light);
+  border-radius: 20px;
+}
+
+.neo-card-sm {
+  background: var(--neo-bg);
+  box-shadow: 4px 4px 10px var(--neo-shadow), -4px -4px 10px var(--neo-shadow-light);
+  border-radius: 15px;
+}
+
+.neo-card-lg {
+  background: var(--neo-bg);
+  box-shadow: 12px 12px 30px var(--neo-shadow), -12px -12px 30px var(--neo-shadow-light);
+  border-radius: 30px;
+}
+
+.neo-inset {
+  background: var(--neo-bg);
+  box-shadow: inset 4px 4px 8px var(--neo-shadow), inset -4px -4px 8px var(--neo-shadow-light);
+  border-radius: 15px;
+}
+
+.neo-button {
+  background: var(--neo-bg);
+  box-shadow: 6px 6px 12px var(--neo-shadow), -6px -6px 12px var(--neo-shadow-light);
+  border-radius: 15px;
+  transition: all 0.2s ease;
+}
+
+.neo-button:hover {
+  box-shadow: 4px 4px 8px var(--neo-shadow), -4px -4px 8px var(--neo-shadow-light);
+}
+
+.neo-button:active {
+  box-shadow: inset 4px 4px 8px var(--neo-shadow), inset -4px -4px 8px var(--neo-shadow-light);
+}
+
+.neo-input {
+  background: var(--neo-bg);
+  box-shadow: inset 4px 4px 8px var(--neo-shadow), inset -4px -4px 8px var(--neo-shadow-light);
+  border-radius: 15px;
+  border: none;
+  outline: none;
+}
+
+.neo-input:focus {
+  box-shadow: inset 4px 4px 8px var(--neo-shadow), inset -4px -4px 8px var(--neo-shadow-light), 0 0 0 3px rgba(76, 175, 80, 0.3);
+}
+
+/* Glass Effect */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Shimmer Effect for Skeleton */
+.shimmer {
+  background: linear-gradient(90deg, var(--neo-bg) 0%, var(--neo-light) 50%, var(--neo-bg) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Progress Ring Animation */
+.progress-ring {
+  transition: stroke-dashoffset 0.5s ease;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+/* Pull to Refresh */
+.ptr-indicator {
+  transition: transform 0.3s ease;
+}
+
+.ptr-indicator.pulling {
+  transform: translateY(0);
+}
+
+.ptr-indicator.refreshing {
+  animation: spin 1s linear infinite;
+}
+
+/* Toast Animations */
+.toast-enter {
+  animation: slideUp 0.3s ease-out;
+}
+
+.toast-exit {
+  animation: slideDown 0.3s ease-out reverse;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--neo-bg);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--neo-dark);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-green);
+}
+
+/* Focus Visible */
+*:focus-visible {
+  outline: 2px solid var(--primary-green);
+  outline-offset: 2px;
+}
+
+/* Smooth Transitions */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary-green) 0%, var(--accent-orange) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Status Colors */
+.status-success {
+  color: #10B981;
+}
+
+.status-warning {
+  color: #F59E0B;
+}
+
+.status-error {
+  color: #EF4444;
+}
+
+.status-info {
+  color: #3B82F6;
+}
+
+/* Dark Mode Adjustments */
+.dark .neo-card,
+.dark .neo-card-sm,
+.dark .neo-card-lg {
+  background: var(--neo-light);
+}
+
+.dark .neo-button {
+  background: var(--neo-light);
+}
+
+.dark .neo-input {
+  background: var(--neo-dark);
+}
+
+/* Mobile Optimizations */
+@media (max-width: 640px) {
+  .neo-card {
+    box-shadow: 6px 6px 15px var(--neo-shadow), -6px -6px 15px var(--neo-shadow-light);
+  }
+  
+  .neo-button {
+    box-shadow: 4px 4px 8px var(--neo-shadow), -4px -4px 8px var(--neo-shadow-light);
+  }
+}
+
+/* Safe Area for Mobile */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top, 20px);
+}

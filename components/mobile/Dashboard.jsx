@@ -1,27 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
+import Icon from '../shared/Icon';
+import Badge, { CountBadge } from '../shared/Badge';
+import { Skeleton, StatSkeleton } from '../shared/Skeleton';
 import { useGardenData } from '../../hooks/useGardenData';
 import { useNotifications } from '../../hooks/useNotifications';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { vegetables } from '../../data/staticData';
 
-/**
- * Dashboard Component
- * Halaman utama aplikasi mobile dengan:
- * - Status Kebun (real data dari localStorage)
- * - Quick Actions
- * - Statistik Personal
- * - Notifikasi
- * - Bottom Navigation
- */
 const Dashboard = ({ user, onNavigate, onLogout }) => {
   const [activeTab, setActiveTab] = useState('home');
+  const containerRef = useRef(null);
 
-  // Real data from hooks
-  const { stats, activities, plants } = useGardenData();
+  const { stats, activities, plants, clearAllData } = useGardenData();
   const { unreadCount, notifications } = useNotifications();
 
-  // Garden stats from real data
   const userGarden = {
     activePlants: stats.activePlants || 0,
     readyToHarvest: stats.readyToHarvest || 0,
@@ -29,323 +23,341 @@ const Dashboard = ({ user, onNavigate, onLogout }) => {
     seedBankContribution: 0,
   };
 
-  // Recent activities from real data
   const recentActivities = stats.recentActivities || [];
 
-  // Get top 3 vegetables from staticData for bibit display
   const topVegetables = vegetables.slice(0, 3).map(v => ({
     name: v.name,
     stock: v.stockAvailable,
-    icon: v.category === 'Sayuran Hijau' ? '🥬' : v.category === 'Bumbu' ? '🌶️' : '🌿'
+    category: v.category
   }));
 
+  const handleRefresh = useCallback(async () => {
+    return new Promise((resolve) => {
+      setTimeout(resolve, 1500);
+    });
+  }, []);
+
+  const { isRefreshing, pullDistance, bindEvents } = usePullToRefresh(handleRefresh);
+
+  const getVegetableIcon = (category) => {
+    if (category?.includes('Hijau')) return 'chart';
+    if (category?.includes('Bumbu')) return 'fire';
+    return 'sparkles';
+  };
+
+  const quickActions = [
+    { id: 'device-monitor', icon: 'bolt', label: 'IoT', color: 'blue' },
+    { id: 'catat-panen', icon: 'document', label: 'Panen', color: 'green' },
+    { id: 'bank-bibit', icon: 'gift', label: 'Bibit', color: 'yellow' },
+    { id: 'menu-gizi', icon: 'heart', label: 'Gizi', color: 'orange' },
+    { id: 'edukasi', icon: 'education', label: 'Edu', color: 'purple' },
+  ];
+
+  const navItems = [
+    { id: 'home', icon: 'home', iconSolid: 'homeSolid', label: 'Beranda' },
+    { id: 'kebun', icon: 'sparkles', label: 'Kebun' },
+    { id: 'bank-bibit', icon: 'gift', label: 'Bibit' },
+    { id: 'edukasi', icon: 'book', label: 'Edukasi' },
+    { id: 'profil', icon: 'user', iconSolid: 'userSolid', label: 'Profil' },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-green-500 to-green-600 pt-8 pb-24 px-6 rounded-b-[2.5rem] shadow-lg">
-        {/* Top Bar */}
-        <div className="flex justify-between items-center mb-6">
+    <div ref={containerRef} className="min-h-screen bg-[#E0E5EC] pb-24">
+      {isRefreshing && (
+        <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4">
+          <div className="neo-card-sm px-4 py-2 flex items-center gap-2">
+            <Icon name="refresh" size={16} className="animate-spin text-green-500" />
+            <span className="text-sm text-gray-600">Memperbarui...</span>
+          </div>
+        </div>
+      )}
+
+      <div className="px-6 pt-8 pb-6">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <p className="text-green-100 text-sm">Device: Telyuk_{user?.deviceId || '001'}</p>
-            <h2 className="text-white text-xl font-bold">Smart Watering</h2>
+            <div className="flex items-center gap-2 mb-1">
+              <Icon name="deviceMobile" size={14} color="#9CA3AF" />
+              <p className="text-gray-400 text-xs">Telyuk_{user?.deviceId || '001'}</p>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-800">
+              Halo, <span className="text-green-500">{user?.name || 'Petani'}</span>
+            </h1>
           </div>
           <button
-            onClick={() => onNavigate('notifications')}
-            className="relative bg-white/20 p-3 rounded-full"
+            onClick={() => onNavigate('profil')}
+            className="relative neo-button w-12 h-12 flex items-center justify-center"
           >
-            <span className="text-2xl">🔔</span>
+            <Icon name="bell" size={24} color="#6B7280" />
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold">
-                {unreadCount}
-              </span>
+              <CountBadge count={unreadCount} className="absolute -top-1 -right-1" />
             )}
           </button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white/95 rounded-xl p-4 shadow-md">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl">🌱</span>
-              <span className="text-xs text-gray-500 font-medium">Aktif</span>
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <button
+            onClick={() => onNavigate('kebun')}
+            className="neo-card p-4 text-left hover:scale-[1.02] transition-transform"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 neo-inset rounded-xl flex items-center justify-center">
+                <Icon name="sparkles" size={20} color="#4CAF50" />
+              </div>
+              <Badge variant="success" dot> Aktif</Badge>
             </div>
-            <p className="text-2xl font-bold text-green-600">{userGarden.activePlants}</p>
-            <p className="text-xs text-gray-600">Tanaman Tumbuh</p>
-          </div>
+            <p className="text-3xl font-bold text-green-500">{userGarden.activePlants}</p>
+            <p className="text-xs text-gray-500 mt-1">Tanaman Tumbuh</p>
+          </button>
 
-          <div className="bg-white/95 rounded-xl p-4 shadow-md">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl">✅</span>
-              <span className="text-xs text-gray-500 font-medium">Siap</span>
+          <button
+            onClick={() => onNavigate('catat-panen')}
+            className="neo-card p-4 text-left hover:scale-[1.02] transition-transform"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 neo-inset rounded-xl flex items-center justify-center">
+                <Icon name="check" size={20} color="#F59E0B" />
+              </div>
+              <Badge variant="warning" dot> Siap</Badge>
             </div>
-            <p className="text-2xl font-bold text-orange-500">{userGarden.readyToHarvest}</p>
-            <p className="text-xs text-gray-600">Siap Panen</p>
-          </div>
+            <p className="text-3xl font-bold text-orange-500">{userGarden.readyToHarvest}</p>
+            <p className="text-xs text-gray-500 mt-1">Siap Panen</p>
+          </button>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="px-6 -mt-16 space-y-5">
-        {/* Quick Actions */}
-        <div className="bg-white rounded-2xl shadow-lg p-5">
-          <h3 className="font-bold text-gray-800 mb-4 text-sm">Aksi Cepat</h3>
+      <div className="px-6 space-y-5">
+        <div className="neo-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-gray-800">Aksi Cepat</h3>
+            <Icon name="grid" size={18} color="#9CA3AF" />
+          </div>
           <div className="grid grid-cols-5 gap-2">
-            <button
-              onClick={() => onNavigate('device-monitor')}
-              className="flex flex-col items-center space-y-2 p-3 bg-blue-100 rounded-xl hover:bg-blue-200 transition-colors active:scale-95 border-2 border-blue-300"
-            >
-              <span className="text-2xl">📡</span>
-              <span className="text-xs font-medium text-blue-700 text-center">
-                IoT
-              </span>
-            </button>
-
-            <button
-              onClick={() => onNavigate('catat-panen')}
-              className="flex flex-col items-center space-y-2 p-3 bg-green-50 rounded-xl hover:bg-green-100 transition-colors active:scale-95"
-            >
-              <span className="text-2xl">📝</span>
-              <span className="text-xs font-medium text-gray-700 text-center">
-                Panen
-              </span>
-            </button>
-
-            <button
-              onClick={() => onNavigate('bank-bibit')}
-              className="flex flex-col items-center space-y-2 p-3 bg-yellow-50 rounded-xl hover:bg-yellow-100 transition-colors active:scale-95"
-            >
-              <span className="text-2xl">🌾</span>
-              <span className="text-xs font-medium text-gray-700 text-center">
-                Bibit
-              </span>
-            </button>
-
-            <button
-              onClick={() => onNavigate('menu-gizi')}
-              className="flex flex-col items-center space-y-2 p-3 bg-orange-50 rounded-xl hover:bg-orange-100 transition-colors active:scale-95"
-            >
-              <span className="text-2xl">🍽️</span>
-              <span className="text-xs font-medium text-gray-700 text-center">
-                Gizi
-              </span>
-            </button>
-
-            <button
-              onClick={() => onNavigate('edukasi')}
-              className="flex flex-col items-center space-y-2 p-3 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors active:scale-95"
-            >
-              <span className="text-2xl">📚</span>
-              <span className="text-xs font-medium text-gray-700 text-center">
-                Edu
-              </span>
-            </button>
+            {quickActions.map((action) => (
+              <button
+                key={action.id}
+                onClick={() => onNavigate(action.id)}
+                className="neo-button p-3 flex flex-col items-center gap-2 active:neo-button-active"
+              >
+                <Icon
+                  name={action.icon}
+                  size={22}
+                  color={
+                    action.color === 'blue' ? '#3B82F6' :
+                    action.color === 'green' ? '#4CAF50' :
+                    action.color === 'yellow' ? '#F59E0B' :
+                    action.color === 'orange' ? '#F97316' :
+                    '#8B5CF6'
+                  }
+                />
+                <span className="text-xs font-medium text-gray-600">{action.label}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Status Kebun Saya */}
-        <div className="bg-white rounded-2xl shadow-lg p-5">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-gray-800 text-sm">Status Kebun Saya</h3>
+        <div className="neo-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-gray-800">Status Kebun</h3>
             <button
               onClick={() => onNavigate('device-monitor')}
-              className="text-green-600 text-xs font-semibold"
+              className="text-green-500 text-xs font-semibold flex items-center gap-1"
             >
-              Monitor IoT →
+              <Icon name="bolt" size={14} />
+              Monitor IoT
             </button>
           </div>
 
-          {/* Garden Health Indicators - Dynamic */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <span className="text-2xl">🌱</span>
+            <div className="neo-inset p-4 rounded-xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                  <Icon name="sparkles" size={20} color="#4CAF50" />
+                </div>
                 <div>
                   <p className="font-semibold text-sm text-gray-800">Tanaman Aktif</p>
-                  <p className="text-xs text-gray-600">{userGarden.activePlants} tanaman terdaftar</p>
+                  <p className="text-xs text-gray-500">{userGarden.activePlants} tanaman terdaftar</p>
                 </div>
               </div>
-              <span className={`font-bold ${userGarden.activePlants > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+              <span className={`font-bold text-sm ${userGarden.activePlants > 0 ? 'text-green-500' : 'text-gray-400'}`}>
                 {userGarden.activePlants > 0 ? 'Aktif' : 'Kosong'}
               </span>
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <span className="text-2xl">✅</span>
+            <div className="neo-inset p-4 rounded-xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                  <Icon name="check" size={20} color="#F59E0B" />
+                </div>
                 <div>
                   <p className="font-semibold text-sm text-gray-800">Siap Panen</p>
-                  <p className="text-xs text-gray-600">{userGarden.readyToHarvest} tanaman siap</p>
+                  <p className="text-xs text-gray-500">{userGarden.readyToHarvest} tanaman siap</p>
                 </div>
               </div>
-              <span className={`font-bold ${userGarden.readyToHarvest > 0 ? 'text-yellow-600' : 'text-gray-400'}`}>
+              <span className={`font-bold text-sm ${userGarden.readyToHarvest > 0 ? 'text-orange-500' : 'text-gray-400'}`}>
                 {userGarden.readyToHarvest > 0 ? 'Ada' : '-'}
               </span>
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <span className="text-2xl">📊</span>
+            <div className="neo-inset p-4 rounded-xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <Icon name="chart" size={20} color="#3B82F6" />
+                </div>
                 <div>
                   <p className="font-semibold text-sm text-gray-800">Total Panen</p>
-                  <p className="text-xs text-gray-600">{userGarden.totalHarvest} kg tercatat</p>
+                  <p className="text-xs text-gray-500">{userGarden.totalHarvest} kg tercatat</p>
                 </div>
               </div>
-              <span className="text-blue-600 font-bold">{userGarden.totalHarvest} kg</span>
+              <span className="font-bold text-sm text-blue-500">{userGarden.totalHarvest} kg</span>
             </div>
           </div>
         </div>
 
-        {/* Bank Bibit Tersedia - Dynamic */}
-        <div className="bg-white rounded-2xl shadow-lg p-5">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-gray-800 text-sm">Bibit Tersedia</h3>
+        <div className="neo-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-gray-800">Bibit Tersedia</h3>
             <button
               onClick={() => onNavigate('bank-bibit')}
-              className="text-green-600 text-xs font-semibold"
+              className="text-green-500 text-xs font-semibold flex items-center gap-1"
             >
-              Lihat Semua →
+              Lihat Semua
+              <Icon name="chevronRight" size={14} />
             </button>
           </div>
 
           <div className="grid grid-cols-3 gap-3">
             {topVegetables.map((item, idx) => (
-              <div
+              <button
                 key={idx}
-                className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-3 border border-green-200"
+                onClick={() => onNavigate('bank-bibit')}
+                className="neo-button p-3 text-center active:neo-button-active"
               >
-                <div className="text-3xl mb-2 text-center">{item.icon}</div>
-                <p className="font-semibold text-xs text-gray-800 text-center mb-1">
-                  {item.name}
-                </p>
-                <p className="text-xs text-green-600 text-center font-bold">
-                  {item.stock} bibit
-                </p>
-              </div>
+                <div className="w-10 h-10 neo-inset rounded-xl flex items-center justify-center mx-auto mb-2">
+                  <Icon
+                    name={getVegetableIcon(item.category)}
+                    size={20}
+                    color="#4CAF50"
+                  />
+                </div>
+                <p className="font-semibold text-xs text-gray-800 mb-1">{item.name}</p>
+                <p className="text-xs text-green-500 font-bold">{item.stock} bibit</p>
+              </button>
             ))}
           </div>
         </div>
 
-        {/* Saran Menu Harian */}
-        <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-2xl shadow-lg p-5 border-2 border-orange-200">
-          <div className="flex items-center mb-3">
-            <span className="text-2xl mr-3">🍽️</span>
-            <h3 className="font-bold text-gray-800 text-sm">Saran Menu Hari Ini</h3>
+        <div className="neo-card p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+              <Icon name="heart" size={20} color="#F97316" />
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-800">Saran Menu Hari Ini</h3>
+              <p className="text-xs text-gray-500">Dari kebun Anda</p>
+            </div>
           </div>
-          <div className="bg-white rounded-lg p-4">
+
+          <div className="neo-inset p-4 rounded-xl">
             <h4 className="font-bold text-gray-800 mb-2">Tumis Kangkung Terasi</h4>
             <p className="text-xs text-gray-600 mb-3">
-              Menggunakan kangkung dari kebun Anda • 85 kalori
+              Menggunakan kangkung dari kebun Anda - 85 kalori
             </p>
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2 text-xs text-gray-600">
-                <span>⏱️ 15 menit</span>
-                <span>•</span>
-                <span>👨‍🍳 Mudah</span>
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <span className="flex items-center gap-1">
+                  <Icon name="clock" size={12} /> 15 menit
+                </span>
+                <span>-</span>
+                <span>Mudah</span>
               </div>
               <button
                 onClick={() => onNavigate('menu-gizi')}
-                className="bg-orange-500 text-white px-4 py-2 rounded-lg text-xs font-semibold hover:bg-orange-600 active:scale-95"
+                className="bg-orange-500 text-white px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1"
               >
-                Lihat Resep
+                <Icon name="arrowRight" size={14} color="white" />
+                Resep
               </button>
             </div>
           </div>
         </div>
 
-        {/* Recent Activities */}
-        <div className="bg-white rounded-2xl shadow-lg p-5">
-          <h3 className="font-bold text-gray-800 mb-4 text-sm">Aktivitas Terbaru</h3>
-          <div className="space-y-3">
-            {recentActivities.map((activity) => (
-              <div
-                key={activity.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-              >
-                <div className="flex items-center space-x-3">
-                  <span className="text-2xl">
-                    {activity.type === 'tanam' ? '🌱' : '✅'}
-                  </span>
-                  <div>
-                    <p className="font-semibold text-sm text-gray-800">
-                      {activity.type === 'tanam' ? 'Menanam' : 'Panen'}{' '}
-                      {activity.plantName}
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      {new Date(activity.date).toLocaleDateString('id-ID', {
-                        day: 'numeric',
-                        month: 'short',
-                      })}
-                    </p>
-                  </div>
-                </div>
-                <span className="text-sm font-bold text-green-600">
-                  {activity.quantity} {activity.unit || 'bibit'}
-                </span>
-              </div>
-            ))}
+        <div className="neo-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-gray-800">Aktivitas Terbaru</h3>
+            <Icon name="clock" size={18} color="#9CA3AF" />
           </div>
+
+          {recentActivities.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 neo-inset rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <Icon name="document" size={28} color="#9CA3AF" />
+              </div>
+              <p className="text-gray-500 text-sm">Belum ada aktivitas</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recentActivities.map((activity) => (
+                <div
+                  key={activity.id}
+                  className="neo-inset p-3 rounded-xl flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                      activity.type === 'tanam' ? 'bg-green-100' : 'bg-orange-100'
+                    }`}>
+                      <Icon
+                        name={activity.type === 'tanam' ? 'sparkles' : 'check'}
+                        size={18}
+                        color={activity.type === 'tanam' ? '#4CAF50' : '#F59E0B'}
+                      />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm text-gray-800">
+                        {activity.type === 'tanam' ? 'Menanam' : 'Panen'} {activity.plantName}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(activity.date).toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'short',
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-sm font-bold text-green-500">
+                    {activity.quantity} {activity.unit || 'bibit'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 shadow-lg">
-        <div className="flex justify-around items-center">
-          <button
-            onClick={() => setActiveTab('home')}
-            className={`flex flex-col items-center space-y-1 ${activeTab === 'home' ? 'text-green-600' : 'text-gray-400'
-              }`}
-          >
-            <span className="text-2xl">🏠</span>
-            <span className="text-xs font-medium">Beranda</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab('kebun');
-              onNavigate('kebun');
-            }}
-            className={`flex flex-col items-center space-y-1 ${activeTab === 'kebun' ? 'text-green-600' : 'text-gray-400'
-              }`}
-          >
-            <span className="text-2xl">🌱</span>
-            <span className="text-xs font-medium">Kebun</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab('bank-bibit');
-              onNavigate('bank-bibit');
-            }}
-            className={`flex flex-col items-center space-y-1 ${activeTab === 'bank-bibit' ? 'text-green-600' : 'text-gray-400'
-              }`}
-          >
-            <span className="text-2xl">🌾</span>
-            <span className="text-xs font-medium">Bibit</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab('edukasi');
-              onNavigate('edukasi');
-            }}
-            className={`flex flex-col items-center space-y-1 ${activeTab === 'edukasi' ? 'text-green-600' : 'text-gray-400'
-              }`}
-          >
-            <span className="text-2xl">📚</span>
-            <span className="text-xs font-medium">Edukasi</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab('profil');
-              onNavigate('profil');
-            }}
-            className={`flex flex-col items-center space-y-1 ${activeTab === 'profil' ? 'text-green-600' : 'text-gray-400'
-              }`}
-          >
-            <span className="text-2xl">👤</span>
-            <span className="text-xs font-medium">Profil</span>
-          </button>
+      <div className="fixed bottom-0 left-0 right-0 bg-[#E0E5EC]/90 backdrop-blur-lg border-t border-white/20 px-4 py-3 safe-bottom">
+        <div className="max-w-md mx-auto flex justify-around items-center">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => {
+                setActiveTab(item.id);
+                if (item.id !== 'home') onNavigate(item.id);
+              }}
+              className={`
+                flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all
+                ${activeTab === item.id
+                  ? 'neo-button text-green-500'
+                  : 'text-gray-400'
+                }
+              `}
+            >
+              <Icon
+                name={activeTab === item.id ? (item.iconSolid || item.icon) : item.icon}
+                size={24}
+                color={activeTab === item.id ? '#4CAF50' : '#9CA3AF'}
+              />
+              <span className="text-xs font-medium">{item.label}</span>
+            </button>
+          ))}
         </div>
       </div>
     </div>

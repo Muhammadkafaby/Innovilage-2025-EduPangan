@@ -12,36 +12,35 @@ import Edukasi from '../components/mobile/Edukasi';
 import DeviceMonitor from '../components/mobile/DeviceMonitor';
 import KebunSaya from '../components/mobile/KebunSaya';
 import Profil from '../components/mobile/Profil';
+import { ToastProvider } from '../hooks/useToast';
+import ToastContainer from '../components/shared/Toast';
+import { useGardenData } from '../hooks/useGardenData';
+import { useNotifications } from '../hooks/useNotifications';
 
-/**
- * Main App Component
- * EduPangan + Smart Watering System dengan MQTT
- */
 export default function Home() {
   const [currentPage, setCurrentPage] = useState('splash');
   const [user, setUser] = useState(null);
+
+  const { addPlant, plants } = useGardenData();
+  const { notifyPlanting } = useNotifications();
 
   const navigate = (page) => {
     setCurrentPage(page);
   };
 
   const handleLogin = (credentials) => {
-    console.log('Login:', credentials);
-    // Set user with name and device info from MQTT credentials
     setUser({
       name: credentials.name,
       deviceNumber: credentials.deviceNumber,
       deviceId: credentials.deviceId,
       username: credentials.username,
       password: credentials.password,
-      rw: '01', // Default RW for demo
+      rw: '01',
     });
     navigate('dashboard');
   };
 
   const handleRegister = (formData) => {
-    console.log('Register:', formData);
-    // Simulasi register
     setUser({
       name: formData.fullName,
       rw: formData.rw,
@@ -51,13 +50,18 @@ export default function Home() {
   };
 
   const handleOrder = (orderData) => {
-    console.log('Order:', orderData);
+    addPlant({
+      name: orderData.vegetable.name,
+      quantity: orderData.quantity,
+      growthPeriod: orderData.vegetable.growthPeriod,
+      category: orderData.vegetable.category
+    });
+    notifyPlanting(orderData.vegetable.name, orderData.quantity);
     alert(`Berhasil memesan ${orderData.quantity} bibit ${orderData.vegetable.name}!`);
     navigate('dashboard');
   };
 
   const handleSubmitPanen = (harvestData) => {
-    console.log('Panen:', harvestData);
     alert(`Berhasil mencatat panen ${harvestData.quantity} ${harvestData.unit} ${harvestData.plantType}!`);
     navigate('dashboard');
   };
@@ -68,76 +72,80 @@ export default function Home() {
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white min-h-screen">
-      {currentPage === 'splash' && (
-        <SplashScreen onComplete={() => navigate('login')} />
-      )}
+    <ToastProvider>
+      <div className="max-w-md mx-auto min-h-screen">
+        <ToastContainer />
+        
+        {currentPage === 'splash' && (
+          <SplashScreen onComplete={() => navigate('login')} />
+        )}
 
-      {currentPage === 'login' && (
-        <Login
-          onLogin={handleLogin}
-          onNavigateToRegister={() => navigate('register')}
-        />
-      )}
+        {currentPage === 'login' && (
+          <Login
+            onLogin={handleLogin}
+            onNavigateToRegister={() => navigate('register')}
+          />
+        )}
 
-      {currentPage === 'register' && (
-        <Register
-          onRegister={handleRegister}
-          onNavigateToLogin={() => navigate('login')}
-        />
-      )}
+        {currentPage === 'register' && (
+          <Register
+            onRegister={handleRegister}
+            onNavigateToLogin={() => navigate('login')}
+          />
+        )}
 
-      {currentPage === 'dashboard' && (
-        <Dashboard user={user} onNavigate={navigate} onLogout={handleLogout} />
-      )}
+        {currentPage === 'dashboard' && (
+          <Dashboard user={user} onNavigate={navigate} onLogout={handleLogout} />
+        )}
 
-      {currentPage === 'bank-bibit' && (
-        <BankBibit
-          onNavigateBack={() => navigate('dashboard')}
-          onOrder={handleOrder}
-        />
-      )}
+        {currentPage === 'bank-bibit' && (
+          <BankBibit
+            onNavigateBack={() => navigate('dashboard')}
+            onOrder={handleOrder}
+          />
+        )}
 
-      {currentPage === 'catat-panen' && (
-        <CatatPanen
-          onNavigateBack={() => navigate('dashboard')}
-          onSubmit={handleSubmitPanen}
-        />
-      )}
+        {currentPage === 'catat-panen' && (
+          <CatatPanen
+            onNavigateBack={() => navigate('dashboard')}
+            onSubmit={handleSubmitPanen}
+          />
+        )}
 
-      {currentPage === 'menu-gizi' && (
-        <MenuGizi
-          onNavigateBack={() => navigate('dashboard')}
-          userHarvests={[]}
-        />
-      )}
+        {currentPage === 'menu-gizi' && (
+          <MenuGizi
+            onNavigateBack={() => navigate('dashboard')}
+            userHarvests={plants}
+          />
+        )}
 
-      {currentPage === 'edukasi' && (
-        <Edukasi onNavigateBack={() => navigate('dashboard')} />
-      )}
+        {currentPage === 'edukasi' && (
+          <Edukasi onNavigateBack={() => navigate('dashboard')} />
+        )}
 
-      {currentPage === 'device-monitor' && (
-        <DeviceMonitor
-          user={user}
-          onNavigateBack={() => navigate('dashboard')}
-        />
-      )}
+        {currentPage === 'device-monitor' && (
+          <DeviceMonitor
+            user={user}
+            onNavigateBack={() => navigate('dashboard')}
+          />
+        )}
 
-      {currentPage === 'kebun' && (
-        <KebunSaya
-          onNavigateBack={() => navigate('dashboard')}
-          onNavigate={navigate}
-        />
-      )}
+        {currentPage === 'kebun' && (
+          <KebunSaya
+            onNavigateBack={() => navigate('dashboard')}
+            onNavigate={navigate}
+          />
+        )}
 
-      {currentPage === 'profil' && (
-        <Profil
-          user={user}
-          onNavigateBack={() => navigate('dashboard')}
-          onLogout={handleLogout}
-          onNavigate={navigate}
-        />
-      )}
-    </div>
+        {currentPage === 'profil' && (
+          <Profil
+            user={user}
+            onNavigateBack={() => navigate('dashboard')}
+            onLogout={handleLogout}
+            onNavigate={navigate}
+          />
+        )}
+      </div>
+    </ToastProvider>
   );
 }

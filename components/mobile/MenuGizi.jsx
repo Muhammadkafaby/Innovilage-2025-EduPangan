@@ -1,23 +1,25 @@
+'use client';
+
 import React, { useState } from 'react';
+import Icon from '../shared/Icon';
+import Badge from '../shared/Badge';
+import { ProgressBar } from '../shared/ProgressBar';
+import { Toggle } from '../shared/Toggle';
 import { recipes } from '../../data/staticData';
 
-/**
- * Menu Gizi Component
- * Rekomendasi menu sehat berdasarkan hasil panen
- * Features:
- * - Filter by category
- * - Filter by ingredients from garden
- * - Recipe details
- * - Nutrition info
- */
 const MenuGizi = ({ onNavigateBack, userHarvests = [] }) => {
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [showOnlyFromGarden, setShowOnlyFromGarden] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
 
-  const categories = ['Semua', 'Sayuran', 'Lauk', 'Salad', 'Sup'];
+  const categories = [
+    { id: 'Semua', icon: 'grid' },
+    { id: 'Sayuran', icon: 'sparkles' },
+    { id: 'Lauk', icon: 'fire' },
+    { id: 'Salad', icon: 'heart' },
+    { id: 'Sup', icon: 'drop' },
+  ];
 
-  // Filter recipes
   const filteredRecipes = recipes.filter((recipe) => {
     const matchesCategory =
       selectedCategory === 'Semua' || recipe.category === selectedCategory;
@@ -30,138 +32,146 @@ const MenuGizi = ({ onNavigateBack, userHarvests = [] }) => {
     return matchesCategory && matchesGardenFilter;
   });
 
-  // Recipe Detail View
+  const nutritionTargets = [
+    { label: 'Sayur & Buah', current: 280, target: 400, unit: 'g', color: 'green' },
+    { label: 'Protein', current: 45, target: 60, unit: 'g', color: 'orange' },
+    { label: 'Serat', current: 18, target: 25, unit: 'g', color: 'blue' },
+  ];
+
   if (selectedRecipe) {
+    const gardenIngredientsCount = selectedRecipe.ingredients.filter(
+      (i) => i.fromGarden
+    ).length;
+
     return (
-      <div className="min-h-screen bg-gray-50 pb-8">
-        {/* Header */}
-        <div className="bg-orange-500 pt-8 pb-6 px-6">
+      <div className="min-h-screen bg-[#E0E5EC] pb-8">
+        <div className="px-6 pt-8 pb-4">
           <button
             onClick={() => setSelectedRecipe(null)}
-            className="text-white mb-4 flex items-center text-sm font-medium"
+            className="neo-button w-10 h-10 flex items-center justify-center mb-4"
           >
-            <span className="mr-2">←</span> Kembali
+            <Icon name="arrowLeft" size={20} color="#6B7280" />
           </button>
-          <h1 className="text-2xl font-bold text-white">Detail Resep</h1>
+          <h1 className="text-xl font-bold text-gray-800">Detail Resep</h1>
         </div>
 
-        {/* Content */}
-        <div className="px-6 -mt-2">
-          {/* Recipe Image */}
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-4">
-            <div className="w-full h-48 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
-              <span className="text-8xl">🍽️</span>
+        <div className="px-6 space-y-5">
+          <div className="neo-card overflow-hidden">
+            <div className="w-full h-48 neo-inset flex items-center justify-center">
+              <div className="w-24 h-24 neo-button rounded-2xl flex items-center justify-center">
+                <Icon name="heart" size={48} color="#F97316" />
+              </div>
             </div>
 
             <div className="p-6">
-              {/* Title & Meta */}
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                {selectedRecipe.name}
-              </h2>
-              <div className="flex items-center space-x-4 text-sm text-gray-600 mb-4">
-                <span className="flex items-center">
-                  <span className="mr-1">👨‍🍳</span> {selectedRecipe.difficulty}
-                </span>
-                <span className="flex items-center">
-                  <span className="mr-1">⏱️</span> {selectedRecipe.prepTime} +{' '}
-                  {selectedRecipe.cookTime}
-                </span>
-                <span className="flex items-center">
-                  <span className="mr-1">👥</span> {selectedRecipe.servings}{' '}
-                  porsi
-                </span>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">{selectedRecipe.name}</h2>
+              
+              <div className="flex items-center flex-wrap gap-3 mb-4">
+                <div className="flex items-center gap-1 text-sm text-gray-500">
+                  <Icon name="clock" size={14} />
+                  {selectedRecipe.prepTime} + {selectedRecipe.cookTime}
+                </div>
+                <div className="flex items-center gap-1 text-sm text-gray-500">
+                  <Icon name="fire" size={14} />
+                  {selectedRecipe.difficulty}
+                </div>
+                <div className="flex items-center gap-1 text-sm text-gray-500">
+                  <Icon name="users" size={14} />
+                  {selectedRecipe.servings} porsi
+                </div>
               </div>
 
-              {/* Nutrition Facts */}
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                <h3 className="font-bold text-gray-800 mb-3 text-sm">
+              {gardenIngredientsCount > 0 && (
+                <Badge variant="success" className="mb-4">
+                  <Icon name="sparkles" size={12} color="white" className="mr-1" />
+                  {gardenIngredientsCount} bahan dari kebun
+                </Badge>
+              )}
+
+              <div className="neo-inset p-4 rounded-xl mb-4">
+                <h3 className="font-bold text-gray-800 text-sm mb-3">
                   Informasi Gizi (per porsi)
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-xs text-gray-600">Kalori</p>
-                    <p className="font-bold text-gray-800">
-                      {selectedRecipe.nutritionPerServing.calories}
-                    </p>
+                  <div className="neo-button p-3 rounded-xl text-center">
+                    <p className="text-xs text-gray-500">Kalori</p>
+                    <p className="font-bold text-gray-800">{selectedRecipe.nutritionPerServing.calories}</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-600">Protein</p>
-                    <p className="font-bold text-gray-800">
-                      {selectedRecipe.nutritionPerServing.protein}
-                    </p>
+                  <div className="neo-button p-3 rounded-xl text-center">
+                    <p className="text-xs text-gray-500">Protein</p>
+                    <p className="font-bold text-gray-800">{selectedRecipe.nutritionPerServing.protein}</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-600">Karbohidrat</p>
-                    <p className="font-bold text-gray-800">
-                      {selectedRecipe.nutritionPerServing.carbs}
-                    </p>
+                  <div className="neo-button p-3 rounded-xl text-center">
+                    <p className="text-xs text-gray-500">Karbo</p>
+                    <p className="font-bold text-gray-800">{selectedRecipe.nutritionPerServing.carbs}</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-600">Lemak</p>
-                    <p className="font-bold text-gray-800">
-                      {selectedRecipe.nutritionPerServing.fat}
-                    </p>
+                  <div className="neo-button p-3 rounded-xl text-center">
+                    <p className="text-xs text-gray-500">Lemak</p>
+                    <p className="font-bold text-gray-800">{selectedRecipe.nutritionPerServing.fat}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Ingredients */}
               <div className="mb-4">
                 <h3 className="font-bold text-gray-800 mb-3">Bahan-bahan</h3>
                 <div className="space-y-2">
                   {selectedRecipe.ingredients.map((ingredient, idx) => (
                     <div
                       key={idx}
-                      className={`flex items-center justify-between p-3 rounded-lg ${ingredient.fromGarden
-                          ? 'bg-green-50 border border-green-200'
-                          : 'bg-gray-50'
-                        }`}
+                      className={`neo-inset p-3 rounded-xl flex items-center justify-between ${
+                        ingredient.fromGarden ? 'border-l-4 border-green-500' : ''
+                      }`}
                     >
-                      <div className="flex items-center space-x-3">
-                        <span className="text-xl">
-                          {ingredient.fromGarden ? '🌱' : '🛒'}
-                        </span>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          ingredient.fromGarden ? 'bg-green-100' : 'bg-gray-100'
+                        }`}>
+                          <Icon
+                            name={ingredient.fromGarden ? 'sparkles' : 'shoppingBag'}
+                            size={16}
+                            color={ingredient.fromGarden ? '#4CAF50' : '#9CA3AF'}
+                          />
+                        </div>
                         <span className="text-sm font-medium text-gray-800">
                           {ingredient.item}
                         </span>
                       </div>
-                      <span className="text-sm text-gray-600">
-                        {ingredient.amount}
-                      </span>
+                      <span className="text-sm text-gray-500">{ingredient.amount}</span>
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-green-600 mt-2 flex items-center">
-                  <span className="mr-1">🌱</span> Dari kebun Anda
-                </p>
               </div>
 
-              {/* Instructions */}
               <div>
                 <h3 className="font-bold text-gray-800 mb-3">Cara Membuat</h3>
-                <ol className="space-y-3">
+                <div className="space-y-3">
                   {selectedRecipe.instructions.map((step, idx) => (
-                    <li key={idx} className="flex">
-                      <span className="flex-shrink-0 w-7 h-7 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">
-                        {idx + 1}
-                      </span>
-                      <p className="text-sm text-gray-700 leading-relaxed pt-1">
-                        {step}
-                      </p>
-                    </li>
+                    <div key={idx} className="flex gap-3">
+                      <div className="w-8 h-8 neo-button rounded-lg flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm font-bold text-orange-500">{idx + 1}</span>
+                      </div>
+                      <p className="text-sm text-gray-700 leading-relaxed pt-1">{step}</p>
+                    </div>
                   ))}
-                </ol>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="grid grid-cols-2 gap-3">
-            <button className="bg-white border-2 border-orange-500 text-orange-500 py-3 rounded-xl font-semibold hover:bg-orange-50 active:scale-95">
-              ❤️ Simpan
+            <button
+              onClick={() => alert('Resep disimpan ke favorit!')}
+              className="neo-button py-4 flex items-center justify-center gap-2 text-red-500 font-semibold"
+            >
+              <Icon name="heart" size={20} color="#EF4444" />
+              Simpan
             </button>
-            <button className="bg-orange-500 text-white py-3 rounded-xl font-semibold hover:bg-orange-600 active:scale-95">
-              📤 Bagikan
+            <button
+              onClick={() => alert('Fitur bagikan akan segera hadir!')}
+              className="bg-orange-500 text-white py-4 rounded-xl font-semibold flex items-center justify-center gap-2 active:neo-button-active"
+            >
+              <Icon name="share" size={20} color="white" />
+              Bagikan
             </button>
           </div>
         </div>
@@ -169,81 +179,58 @@ const MenuGizi = ({ onNavigateBack, userHarvests = [] }) => {
     );
   }
 
-  // Recipe List View
   return (
-    <div className="min-h-screen bg-gray-50 pb-8">
-      {/* Header */}
-      <div className="bg-orange-500 pt-8 pb-6 px-6">
+    <div className="min-h-screen bg-[#E0E5EC] pb-8">
+      <div className="px-6 pt-8 pb-4">
         <button
           onClick={onNavigateBack}
-          className="text-white mb-4 flex items-center text-sm font-medium"
+          className="neo-button w-10 h-10 flex items-center justify-center mb-4"
         >
-          <span className="mr-2">←</span> Kembali
+          <Icon name="arrowLeft" size={20} color="#6B7280" />
         </button>
-        <h1 className="text-2xl font-bold text-white mb-2">Menu Gizi Sehat</h1>
-        <p className="text-orange-100 text-sm">
-          Rekomendasi menu dari hasil panen Anda
-        </p>
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">Menu Gizi Sehat</h1>
+        <p className="text-sm text-gray-500">Rekomendasi menu dari hasil panen Anda</p>
       </div>
 
-      {/* Filters */}
-      <div className="px-6 py-4 space-y-3">
-        {/* Category Filter */}
+      <div className="px-6 py-4 space-y-4">
         <div className="overflow-x-auto">
-          <div className="flex space-x-2">
-            {categories.map((category) => (
+          <div className="flex gap-2">
+            {categories.map((cat) => (
               <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${selectedCategory === category
-                    ? 'bg-orange-500 text-white shadow-md'
-                    : 'bg-white text-gray-700 border border-gray-300'
-                  }`}
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-xl whitespace-nowrap
+                  font-medium text-sm transition-all
+                  ${selectedCategory === cat.id
+                    ? 'neo-button text-orange-500'
+                    : 'neo-inset text-gray-500'
+                  }
+                `}
               >
-                {category}
+                <Icon
+                  name={cat.icon}
+                  size={16}
+                  color={selectedCategory === cat.id ? '#F97316' : '#9CA3AF'}
+                />
+                {cat.id}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Garden Ingredient Toggle */}
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-          <label className="flex items-center justify-between cursor-pointer">
-            <div className="flex items-center space-x-3">
-              <span className="text-2xl">🌱</span>
-              <div>
-                <p className="font-semibold text-gray-800 text-sm">
-                  Dari Kebun Saya
-                </p>
-                <p className="text-xs text-gray-600">
-                  Tampilkan menu yang bisa dibuat dengan hasil panen
-                </p>
-              </div>
-            </div>
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={showOnlyFromGarden}
-                onChange={(e) => setShowOnlyFromGarden(e.target.checked)}
-                className="sr-only"
-              />
-              <div
-                className={`w-14 h-8 rounded-full transition-colors ${showOnlyFromGarden ? 'bg-green-500' : 'bg-gray-300'
-                  }`}
-              >
-                <div
-                  className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-transform ${showOnlyFromGarden ? 'translate-x-7' : 'translate-x-1'
-                    } mt-1`}
-                ></div>
-              </div>
-            </div>
-          </label>
+        <div className="neo-card p-4">
+          <Toggle
+            enabled={showOnlyFromGarden}
+            onChange={setShowOnlyFromGarden}
+            label="Dari Kebun Saya"
+            description="Tampilkan menu yang bisa dibuat dengan hasil panen"
+          />
         </div>
       </div>
 
-      {/* Recipes Grid */}
       <div className="px-6">
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-gray-500 mb-4">
           {filteredRecipes.length} resep tersedia
         </p>
 
@@ -257,39 +244,38 @@ const MenuGizi = ({ onNavigateBack, userHarvests = [] }) => {
               <button
                 key={recipe.id}
                 onClick={() => setSelectedRecipe(recipe)}
-                className="w-full bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow active:scale-98 text-left"
+                className="w-full neo-card overflow-hidden text-left active:neo-button-active transition-all"
               >
                 <div className="flex">
-                  {/* Image */}
-                  <div className="w-32 h-32 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center flex-shrink-0">
-                    <span className="text-5xl">🍽️</span>
+                  <div className="w-28 h-28 neo-inset flex items-center justify-center flex-shrink-0">
+                    <Icon name="heart" size={40} color="#F97316" />
                   </div>
 
-                  {/* Content */}
                   <div className="flex-1 p-4">
-                    <h3 className="font-bold text-gray-800 mb-1">
-                      {recipe.name}
-                    </h3>
-                    <div className="flex items-center space-x-3 text-xs text-gray-600 mb-2">
-                      <span>⏱️ {recipe.prepTime}</span>
-                      <span>•</span>
-                      <span>👨‍🍳 {recipe.difficulty}</span>
+                    <h3 className="font-bold text-gray-800 mb-1">{recipe.name}</h3>
+                    <div className="flex items-center gap-3 text-xs text-gray-500 mb-2">
+                      <span className="flex items-center gap-1">
+                        <Icon name="clock" size={12} /> {recipe.prepTime}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Icon name="fire" size={12} /> {recipe.difficulty}
+                      </span>
                     </div>
 
                     {gardenIngredientsCount > 0 && (
-                      <div className="inline-flex items-center bg-green-50 border border-green-200 rounded-full px-3 py-1 mb-2">
-                        <span className="text-xs font-semibold text-green-700">
-                          🌱 {gardenIngredientsCount} bahan dari kebun
-                        </span>
-                      </div>
+                      <Badge variant="success" className="mb-2">
+                        <Icon name="sparkles" size={10} color="white" className="mr-1" />
+                        {gardenIngredientsCount} dari kebun
+                      </Badge>
                     )}
 
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-600">
+                      <span className="text-gray-500">
                         {recipe.nutritionPerServing.calories} kalori/porsi
                       </span>
-                      <span className="text-orange-600 font-semibold">
-                        Lihat Resep →
+                      <span className="text-orange-500 font-semibold flex items-center gap-1">
+                        Lihat Resep
+                        <Icon name="chevronRight" size={14} color="#F97316" />
                       </span>
                     </div>
                   </div>
@@ -301,50 +287,42 @@ const MenuGizi = ({ onNavigateBack, userHarvests = [] }) => {
 
         {filteredRecipes.length === 0 && (
           <div className="text-center py-12">
-            <span className="text-6xl mb-4 block">🍽️</span>
-            <p className="text-gray-600 mb-2">Resep tidak ditemukan</p>
-            <p className="text-sm text-gray-500">
-              Coba ubah filter pencarian
-            </p>
+            <div className="w-20 h-20 neo-inset rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Icon name="heart" size={32} color="#9CA3AF" />
+            </div>
+            <p className="text-gray-600 font-medium mb-2">Resep tidak ditemukan</p>
+            <p className="text-sm text-gray-400">Coba ubah filter pencarian</p>
           </div>
         )}
       </div>
 
-      {/* Daily Nutrition Target */}
       <div className="px-6 mt-6">
-        <div className="bg-white rounded-2xl shadow-lg p-5">
-          <h3 className="font-bold text-gray-800 mb-4 text-sm">
-            Target Gizi Harian Anda
-          </h3>
+        <div className="neo-card p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 neo-inset rounded-xl flex items-center justify-center">
+              <Icon name="chart" size={20} color="#4CAF50" />
+            </div>
+            <h3 className="font-bold text-gray-800">Target Gizi Harian</h3>
+          </div>
 
-          <div className="space-y-3">
-            {[
-              { label: 'Sayur & Buah', current: 280, target: 400, unit: 'g' },
-              { label: 'Protein', current: 45, target: 60, unit: 'g' },
-              { label: 'Serat', current: 18, target: 25, unit: 'g' },
-            ].map((item, idx) => (
+          <div className="space-y-4">
+            {nutritionTargets.map((item, idx) => (
               <div key={idx}>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="font-medium text-gray-700">
-                    {item.label}
-                  </span>
-                  <span className="text-gray-600">
-                    {item.current}/{item.target} {item.unit}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-green-500 rounded-full h-2 transition-all"
-                    style={{
-                      width: `${(item.current / item.target) * 100}%`,
-                    }}
-                  ></div>
-                </div>
+                <ProgressBar
+                  value={item.current}
+                  max={item.target}
+                  color={item.color}
+                  showLabel
+                  label={item.label}
+                />
+                <p className="text-xs text-gray-500 text-right mt-1">
+                  {item.current}/{item.target} {item.unit}
+                </p>
               </div>
             ))}
           </div>
 
-          <p className="text-xs text-gray-500 text-center mt-4">
+          <p className="text-xs text-gray-400 text-center mt-4">
             Data berdasarkan catatan panen Anda hari ini
           </p>
         </div>

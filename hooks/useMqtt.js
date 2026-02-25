@@ -26,8 +26,14 @@ export function useMqtt(deviceNumber) {
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
   
-  const clientRef = useRef(null);
+const clientRef = useRef(null);
   const topicsRef = useRef(null);
+  const connectionStateRef = useRef(connectionState);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    connectionStateRef.current = connectionState;
+  }, [connectionState]);
 
   // Connect to MQTT broker
   const connect = useCallback(() => {
@@ -100,9 +106,9 @@ export function useMqtt(deviceNumber) {
       setError(err.message || 'Connection failed');
     });
 
-    client.on('close', () => {
+client.on('close', () => {
       console.log('[MQTT] Connection closed');
-      if (connectionState !== MQTT_STATE.DISCONNECTED) {
+      if (connectionStateRef.current !== MQTT_STATE.DISCONNECTED) {
         setConnectionState(MQTT_STATE.DISCONNECTED);
       }
     });
