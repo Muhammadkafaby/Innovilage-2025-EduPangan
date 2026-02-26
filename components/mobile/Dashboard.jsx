@@ -3,17 +3,21 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Icon from '../shared/Icon';
 import Badge, { CountBadge } from '../shared/Badge';
-import { useGardenData } from '../../hooks/useGardenData';
-import { useNotifications } from '../../hooks/useNotifications';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
-import { vegetables } from '../../data/staticData';
+import { useApi } from '../../hooks/useApi';
 
-const Dashboard = ({ user, onNavigate }) => {
+const Dashboard = ({ user, onNavigate, userId = 1 }) => {
   const [activeTab, setActiveTab] = useState('home');
   const containerRef = useRef(null);
-
-  const { stats } = useGardenData();
-  const { unreadCount } = useNotifications();
+  const [stats, setStats] = useState({
+    activePlants: 0,
+    readyToHarvest: 0,
+    totalHarvest: 0,
+    recentActivities: [],
+  });
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [topVegetables, setTopVegetables] = useState([]);
+  const { get } = useApi('/api');
 
   const userGarden = {
     activePlants: stats.activePlants || 0,
@@ -24,17 +28,60 @@ const Dashboard = ({ user, onNavigate }) => {
 
   const recentActivities = stats.recentActivities || [];
 
-  const topVegetables = vegetables.slice(0, 3).map(v => ({
-    name: v.name,
-    stock: v.stockAvailable,
-    category: v.category
-  }));
+  const loadDashboardData = useCallback(async () => {
+    if (!userId) {
+      setStats({
+        activePlants: 0,
+        readyToHarvest: 0,
+        totalHarvest: 0,
+        recentActivities: [],
+      });
+      setUnreadCount(0);
+      setTopVegetables([]);
+      return;
+    }
+
+    try {
+      const [plantsData, activitiesData, notificationsData, seedsData] = await Promise.all([
+        get('/garden', { userId, type: 'plants' }),
+        get('/garden', { userId, type: 'activities' }),
+        get('/notifications', { userId }),
+        get('/seeds', { type: 'stock' }),
+      ]);
+
+      const plants = plantsData || [];
+      const activities = activitiesData || [];
+      const notifications = notificationsData || [];
+
+      const activePlants = plants.filter((p) => p.status === 'tumbuh').length;
+      const readyToHarvest = plants.filter((p) => p.status === 'siap_panen').length;
+      const totalHarvest = activities
+        .filter((a) => a.type === 'panen')
+        .reduce((sum, a) => sum + (parseFloat(a.quantity) || 0), 0)
+        .toFixed(1);
+
+      setStats({
+        activePlants,
+        readyToHarvest,
+        totalHarvest,
+        recentActivities: activities.slice(0, 5),
+      });
+      setUnreadCount(notifications.filter((n) => !n.read).length);
+      setTopVegetables(
+        (seedsData || []).slice(0, 3).map((seed) => ({
+          name: seed.name,
+          stock: seed.stockAvailable,
+          category: seed.category,
+        }))
+      );
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+    }
+  }, [get, userId]);
 
   const handleRefresh = useCallback(async () => {
-    return new Promise((resolve) => {
-      setTimeout(resolve, 1500);
-    });
-  }, []);
+    await loadDashboardData();
+  }, [loadDashboardData]);
 
   const { isRefreshing, pullDistance, bindEvents } = usePullToRefresh(handleRefresh);
 
@@ -44,6 +91,10 @@ const Dashboard = ({ user, onNavigate }) => {
       if (cleanup) cleanup();
     };
   }, [bindEvents]);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
 
   const getVegetableIcon = (category) => {
     if (category?.includes('Hijau')) return 'chart';

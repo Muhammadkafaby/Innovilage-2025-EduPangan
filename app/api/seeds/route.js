@@ -1,119 +1,165 @@
 import { NextResponse } from 'next/server';
-import { vegetables } from '../../../data/staticData';
+import prisma from '../../../lib/prisma';
+import { getAuthUser } from '../../../lib/auth';
 
-// Simulated seed bank transactions
-let transactions = [
-  {
-    id: 1,
-    userId: 1,
-    transactionType: 'ambil',
-    vegetableId: 1,
-    vegetableName: 'Kangkung',
-    quantity: 20,
-    date: '2025-01-10',
-    contributionPaid: 2000,
-    status: 'selesai',
-  },
-  {
-    id: 2,
-    userId: 2,
-    transactionType: 'ambil',
-    vegetableId: 4,
-    vegetableName: 'Cabai Rawit',
-    quantity: 10,
-    date: '2025-01-09',
-    contributionPaid: 3000,
-    status: 'selesai',
-  },
-];
-
-// GET - Get seeds or transactions
 export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const type = searchParams.get('type'); // 'seeds', 'transactions', 'stock'
-  const userId = searchParams.get('userId');
+  try {
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get('type');
+    const userId = searchParams.get('userId');
 
-  if (type === 'seeds') {
-    return NextResponse.json(vegetables);
-  }
-
-  if (type === 'transactions') {
-    if (userId) {
-      return NextResponse.json(transactions.filter(t => t.userId === parseInt(userId)));
+    if (type === 'seeds' || type === 'stock') {
+      const seeds = await prisma.seed.findMany({
+        orderBy: { name: 'asc' },
+      });
+      return NextResponse.json(seeds);
     }
-    return NextResponse.json(transactions);
-  }
 
-  if (type === 'stock') {
-    const stock = vegetables.map(v => ({
-      id: v.id,
-      name: v.name,
-      category: v.category,
-      stockAvailable: v.stockAvailable,
-      price: v.price,
-    }));
-    return NextResponse.json(stock);
-  }
+    if (type === 'transactions') {
+      const where = userId ? { userId: parseInt(userId) } : {};
+      const transactions = await prisma.seedTransaction.findMany({
+        where,
+        include: {
+          seed: {
+            select: {
+              id: true,
+              name: true,
+              category: true,
+            },
+          },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+            },
+          },
+        },
+        orderBy: { date: 'desc' },
+      });
+      return NextResponse.json(transactions);
+    }
 
-  // Default: return all seeds
-  return NextResponse.json(vegetables);
+    const seeds = await prisma.seed.findMany({
+      orderBy: { name: 'asc' },
+    });
+    return NextResponse.json(seeds);
+  } catch (error) {
+    console.error('Seeds GET error:', error);
+    return NextResponse.json(
+      { error: 'Terjadi kesalahan server' },
+      { status: 500 }
+    );
+  }
 }
 
-// POST - Order seeds or return seeds
 export async function POST(request) {
-  const body = await request.json();
-  const { type, userId, vegetableId, quantity, vegetableName } = body;
+  try {
+    const auth = await getAuthUser(request);
+    if (!auth) {
+      return NextResponse.json({ error: 'Belum login' }, { status: 401 });
+    }
 
-  switch (type) {
-    case 'order':
-      // Calculate contribution
-      const vegetable = vegetables.find(v => v.id === vegetableId);
-      const contribution = vegetable.price * quantity;
+    const body = await request.json();
+    const { type, userId, vegetableId, quantity, vegetableName } = body;
 
-      const newTransaction = {
-        id: Date.now(),
-        userId: parseInt(userId),
-        transactionType: 'ambil',
-        vegetableId,
-        vegetableName,
-        quantity,
-        date: new Date().toISOString().split('T')[0],
-        contributionPaid: contribution,
-        status: 'selesai',
-      };
+    const parsedUserId = parseInt(userId);
+    const parsedVegetableId = parseInt(vegetableId);
 
-      transactions.push(newTransaction);
+    if (type === 'order') {
+      const seed = await prisma.seed.findUnique({
+        where: { id: parsedVegetableId },
+      });
+
+      if (!seed) {
+        return NextResponse.json(
+          { error: 'Bibit tidak ditemukan' },
+          { status: 404 }
+        );
+      }
+
+      if (seed.stockAvailable < quantity) {
+        return NextResponse.json(
+          { error: 'Stok tidak mencukupi' },
+          { status: 400 }
+        );
+      }
+
+      const contribution = seed.price * quantity;
+
+      const [transaction] = await prisma.$transaction([
+        prisma.seedTransaction.create({
+          data: {
+            userId: parsedUserId,
+            seedId: parsedVegetableId,
+            transactionType: 'ambil',
+            quantity,
+            contributionPaid: contribution,
+            status: 'selesai',
+          },
+        }),
+        prisma.seed.update({
+          where: { id: parsedVegetableId },
+          data: {
+            stockAvailable: { decrement: quantity },
+          },
+        }),
+      ]);
 
       return NextResponse.json(
-        { message: 'Order successful', transaction: newTransaction },
+        { message: 'Order successful', transaction },
         { status: 201 }
       );
+    }
 
-    case 'return':
-      // Calculate contribution received (2x return)
-      const veg = vegetables.find(v => v.id === vegetableId);
-      const contributionReceived = veg.price * quantity * 2;
+    if (type === 'return') {
+      const seed = await prisma.seed.findUnique({
+        where: { id: parsedVegetableId },
+      });
 
-      const returnTransaction = {
-        id: Date.now(),
-        userId: parseInt(userId),
-        transactionType: 'kembalikan',
-        vegetableId,
-        vegetableName,
-        quantity,
-        date: new Date().toISOString().split('T')[0],
-        contributionReceived,
-        status: 'selesai',
-      };
+      if (!seed) {
+        return NextResponse.json(
+          { error: 'Bibit tidak ditemukan' },
+          { status: 404 }
+        );
+      }
 
-      transactions.push(returnTransaction);
+      const contributionReceived = seed.price * quantity * 2;
+
+      const [transaction] = await prisma.$transaction([
+        prisma.seedTransaction.create({
+          data: {
+            userId: parsedUserId,
+            seedId: parsedVegetableId,
+            transactionType: 'kembalikan',
+            quantity,
+            contributionReceived,
+            status: 'selesai',
+          },
+        }),
+        prisma.seed.update({
+          where: { id: parsedVegetableId },
+          data: {
+            stockAvailable: { increment: quantity },
+          },
+        }),
+      ]);
 
       return NextResponse.json(
-        { message: 'Return successful', transaction: returnTransaction },
+        { message: 'Return successful', transaction },
         { status: 201 }
       );
+    }
 
-    default:
-      return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Invalid type' },
+      { status: 400 }
+    );
+  } catch (error) {
+    console.error('Seeds POST error:', error);
+    return NextResponse.json(
+      { error: 'Terjadi kesalahan server' },
+      { status: 500 }
+    );
   }
 }

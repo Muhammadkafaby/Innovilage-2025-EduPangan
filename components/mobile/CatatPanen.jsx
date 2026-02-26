@@ -6,7 +6,6 @@ import Icon from '../shared/Icon';
 import Badge from '../shared/Badge';
 import { vegetables } from '../../data/staticData';
 import { useApi } from '../../hooks/useApi';
-import { useNotifications } from '../../hooks/useNotifications';
 
 const CatatPanen = ({ onNavigateBack, onSubmit, userId = 1 }) => {
   const [formData, setFormData] = useState({
@@ -22,7 +21,6 @@ const CatatPanen = ({ onNavigateBack, onSubmit, userId = 1 }) => {
   const [recentHarvests, setRecentHarvests] = useState([]);
 
   const { get, post } = useApi('/api');
-  const { notifyHarvest } = useNotifications();
 
   const loadRecentHarvests = useCallback(async () => {
     try {
@@ -107,7 +105,13 @@ const CatatPanen = ({ onNavigateBack, onSubmit, userId = 1 }) => {
         },
       });
 
-      notifyHarvest(formData.plantType, formData.quantity, formData.unit);
+      await post('/notifications', {
+        userId,
+        type: 'harvest',
+        title: 'Panen Berhasil!',
+        message: `Berhasil mencatat panen ${formData.quantity} ${formData.unit} ${formData.plantType}`,
+        icon: '🌿',
+      });
 
       alert('Catatan panen berhasil disimpan!');
 

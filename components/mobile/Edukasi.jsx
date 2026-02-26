@@ -1,13 +1,63 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Icon from '../shared/Icon';
 import Badge from '../shared/Badge';
+import { useApi } from '../../hooks/useApi';
 import { educationArticles, videoTutorials } from '../../data/staticData';
 
 const Edukasi = ({ onNavigateBack }) => {
   const [activeTab, setActiveTab] = useState('artikel');
   const [selectedArticle, setSelectedArticle] = useState(null);
+  const [articles, setArticles] = useState([]);
+  const [loadingArticles, setLoadingArticles] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [articlesError, setArticlesError] = useState('');
+  const { get, post } = useApi('/api');
+
+  useEffect(() => {
+    const loadArticles = async () => {
+      setLoadingArticles(true);
+      setArticlesError('');
+      try {
+        const data = await get('/articles', { limit: 50 });
+        setArticles(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to load articles:', error);
+        setArticlesError('Gagal memuat artikel dari server, menampilkan data default.');
+        setArticles([]);
+      } finally {
+        setLoadingArticles(false);
+      }
+    };
+
+    loadArticles();
+  }, [get]);
+
+  const articleList = articles.length > 0 ? articles : educationArticles;
+
+  const handleOpenArticle = async (article) => {
+    if (!article?.slug) {
+      setSelectedArticle(article);
+      return;
+    }
+
+    setLoadingDetail(true);
+    try {
+      await post(`/articles/${article.slug}`, {});
+      const detail = await get(`/articles/${article.slug}`);
+      setSelectedArticle(detail);
+
+      setArticles((prev) => prev.map((item) => (
+        item.slug === article.slug ? { ...item, views: detail.views } : item
+      )));
+    } catch (error) {
+      console.error('Failed to open article detail:', error);
+      setSelectedArticle(article);
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
 
   if (selectedArticle) {
     return (
@@ -104,10 +154,23 @@ const Edukasi = ({ onNavigateBack }) => {
       <div className="px-6">
         {activeTab === 'artikel' && (
           <div className="space-y-4">
-            {educationArticles.map((article) => (
+            {articlesError && (
+              <div className="neo-card p-3 border border-amber-200 bg-amber-50 text-amber-700 text-xs">
+                {articlesError}
+              </div>
+            )}
+
+            {(loadingArticles || loadingDetail) && (
+              <div className="neo-card p-4 border border-white/45 flex items-center gap-2 text-sm text-gray-600">
+                <Icon name="refresh" size={16} className="animate-spin" />
+                {loadingDetail ? 'Membuka detail artikel...' : 'Memuat artikel terbaru...'}
+              </div>
+            )}
+
+            {articleList.map((article) => (
               <button
                 key={article.id}
-                onClick={() => setSelectedArticle(article)}
+                onClick={() => handleOpenArticle(article)}
                 className="w-full neo-card p-4 text-left active:neo-button-active transition-all border border-white/45"
               >
                 <div className="flex gap-4">
@@ -122,13 +185,22 @@ const Edukasi = ({ onNavigateBack }) => {
                         <Icon name="clock" size={12} /> {article.readTime}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Icon name="eye" size={12} /> {article.views}
+                        <Icon name="eye" size={12} /> {article.views || 0}
                       </span>
                     </div>
                   </div>
                 </div>
               </button>
             ))}
+
+            {!loadingArticles && articleList.length === 0 && (
+              <div className="neo-card p-8 text-center border border-white/45">
+                <div className="w-16 h-16 neo-inset rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <Icon name="document" size={28} color="#9CA3AF" />
+                </div>
+                <p className="text-gray-500 text-sm">Belum ada artikel tersedia</p>
+              </div>
+            )}
           </div>
         )}
 

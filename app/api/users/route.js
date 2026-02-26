@@ -1,81 +1,111 @@
 import { NextResponse } from 'next/server';
+import prisma from '../../../lib/prisma';
+import { getAuthUser, requireAdmin } from '../../../lib/auth';
 
-// Simulated database (in production, use real database)
-let users = [
-  {
-    id: 1,
-    name: 'Ibu Siti Aminah',
-    phone: '081234567890',
-    rw: '02',
-    role: 'peserta',
-    joinDate: '2025-01-01',
-    gardenSize: '15m²',
-    totalHarvest: 45.5,
-    activePlants: 12,
-  },
-  {
-    id: 2,
-    name: 'Ibu Nurhasanah',
-    phone: '081234567891',
-    rw: '02',
-    role: 'peserta',
-    joinDate: '2025-01-02',
-    gardenSize: '20m²',
-    totalHarvest: 38.2,
-    activePlants: 15,
-  },
-  {
-    id: 3,
-    name: 'Ibu Aisyah',
-    phone: '081234567892',
-    rw: '03',
-    role: 'kader',
-    joinDate: '2024-12-15',
-    gardenSize: '25m²',
-    totalHarvest: 67.8,
-    activePlants: 18,
-  },
-];
-
-// GET all users
 export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const rw = searchParams.get('rw');
-  const role = searchParams.get('role');
+  try {
+    const { searchParams } = new URL(request.url);
+    const rw = searchParams.get('rw');
+    const role = searchParams.get('role');
 
-  let filteredUsers = users;
+    const where = {};
+    if (rw) where.rw = rw;
+    if (role) where.role = role;
 
-  if (rw) {
-    filteredUsers = filteredUsers.filter(user => user.rw === rw);
+    const users = await prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        rw: true,
+        role: true,
+        kaderCode: true,
+        gardenSize: true,
+        deviceId: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const usersWithStats = await Promise.all(
+      users.map(async (user) => {
+        const [plants, harvests, activities] = await Promise.all([
+          prisma.plant.count({ where: { userId: user.id, status: 'tumbuh' } }),
+          prisma.harvest.aggregate({ where: { userId: user.id }, _sum: { quantity: true } }),
+          prisma.activity.count({ where: { userId: user.id } }),
+        ]);
+
+        return {
+          ...user,
+          activePlants: plants,
+          totalHarvest: harvests._sum.quantity || 0,
+          totalActivities: activities,
+          joinDate: user.createdAt.toISOString().split('T')[0],
+        };
+      })
+    );
+
+    return NextResponse.json(usersWithStats);
+  } catch (error) {
+    console.error('Users GET error:', error);
+    return NextResponse.json(
+      { error: 'Terjadi kesalahan server' },
+      { status: 500 }
+    );
   }
-
-  if (role) {
-    filteredUsers = filteredUsers.filter(user => user.role === role);
-  }
-
-  return NextResponse.json(filteredUsers);
 }
 
-// POST - Create new user
 export async function POST(request) {
-  const body = await request.json();
+  try {
+    const auth = await requireAdmin()(request);
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
 
-  const newUser = {
-    id: users.length + 1,
-    name: body.fullName,
-    phone: body.phoneNumber,
-    rw: body.rw,
-    role: 'peserta',
-    joinDate: new Date().toISOString().split('T')[0],
-    gardenSize: '0m²',
-    totalHarvest: 0,
-    activePlants: 0,
-  };
+    const body = await request.json();
+    const { fullName, phoneNumber, rw, role } = body;
 
-  users.push(newUser);
+    const existingUser = await prisma.user.findUnique({
+      where: { phone: phoneNumber },
+    });
 
-  return NextResponse.json(
-    { message: 'User created successfully', user: newUser },
-    { status: 201 }
-  );
+    if (existingUser) {
+      return NextResponse.json(
+        { error: 'Nomor HP sudah terdaftar' },
+        { status: 400 }
+      );
+    }
+
+    const user = await prisma.user.create({
+      data: {
+        name: fullName,
+        phone: phoneNumber,
+        rw,
+        role: role || 'peserta',
+        pin: '$2a$12$dummyhashfordemo', 
+        gardenSize: '0m²',
+      },
+    });
+
+    return NextResponse.json(
+      { 
+        message: 'User berhasil dibuat', 
+        user: {
+          id: user.id,
+          name: user.name,
+          phone: user.phone,
+          rw: user.rw,
+          role: user.role,
+        }
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error('Users POST error:', error);
+    return NextResponse.json(
+      { error: 'Terjadi kesalahan server' },
+      { status: 500 }
+    );
+  }
 }

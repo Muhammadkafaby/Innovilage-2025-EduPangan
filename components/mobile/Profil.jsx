@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Icon from '../shared/Icon';
 import Badge from '../shared/Badge';
-import { useGardenData } from '../../hooks/useGardenData';
 import { useApi } from '../../hooks/useApi';
 
 const Profil = ({ user, onNavigateBack, onLogout, onNavigate, userId = 1 }) => {
@@ -11,10 +10,49 @@ const Profil = ({ user, onNavigateBack, onLogout, onNavigate, userId = 1 }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const { stats, clearAllData } = useGardenData();
-  const { get, put, loading, error } = useApi('/api');
+  const [stats, setStats] = useState({
+    activePlants: 0,
+    totalHarvest: 0,
+    totalActivities: 0,
+  });
+  const { get, put, delete: del } = useApi('/api');
+
+  const loadStats = useCallback(async () => {
+    if (!userId) {
+      setStats({ activePlants: 0, totalHarvest: 0, totalActivities: 0 });
+      return;
+    }
+
+    try {
+      const [plantsData, activitiesData] = await Promise.all([
+        get('/garden', { userId, type: 'plants' }),
+        get('/garden', { userId, type: 'activities' }),
+      ]);
+
+      const plants = plantsData || [];
+      const activities = activitiesData || [];
+      const totalHarvest = activities
+        .filter((a) => a.type === 'panen')
+        .reduce((sum, a) => sum + (parseFloat(a.quantity) || 0), 0)
+        .toFixed(1);
+
+      setStats({
+        activePlants: plants.filter((p) => p.status === 'tumbuh').length,
+        totalHarvest,
+        totalActivities: activities.length,
+      });
+    } catch (err) {
+      console.error('Failed to load profile stats:', err);
+    }
+  }, [get, userId]);
 
   const loadNotifications = useCallback(async () => {
+    if (!userId) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
+
     try {
       const notificationsData = await get('/notifications', { userId });
       setNotifications(notificationsData || []);
@@ -25,18 +63,25 @@ const Profil = ({ user, onNavigateBack, onLogout, onNavigate, userId = 1 }) => {
   }, [get, userId]);
 
   useEffect(() => {
+    loadStats();
     loadNotifications();
-  }, [loadNotifications]);
+  }, [loadNotifications, loadStats]);
 
   const handleClearAllData = async () => {
-    clearAllData();
-    setShowClearDataConfirm(false);
-    alert('Semua data berhasil dihapus!');
+    try {
+      await del(`/garden?type=all&userId=${userId}`);
+      setShowClearDataConfirm(false);
+      alert('Semua data berhasil dihapus!');
+      loadStats();
+      loadNotifications();
+    } catch (err) {
+      alert('Gagal menghapus data: ' + (err.message || 'Terjadi kesalahan'));
+    }
   };
 
   const handleMarkAllRead = async () => {
     try {
-      await put('/notifications', { markAll: true });
+      await put('/notifications', { markAll: true, userId });
       loadNotifications();
       alert('Semua notifikasi ditandai sudah dibaca!');
     } catch (err) {

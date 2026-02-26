@@ -66,11 +66,37 @@ const Register = ({ onRegister, onNavigateToLogin }) => {
     }
 
     setIsLoading(true);
+    setErrors({});
 
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fullName: formData.fullName,
+          phoneNumber: formData.phoneNumber,
+          rw: formData.rw,
+          kaderCode: formData.kaderCode,
+          pin: formData.pin,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Pendaftaran gagal');
+      }
+
+      onRegister && onRegister({
+        ...formData,
+        id: data.user?.id,
+      });
+    } catch (err) {
+      setErrors({ submit: err.message || 'Terjadi kesalahan' });
       setIsLoading(false);
-      onRegister && onRegister(formData);
-    }, 2000);
+    }
   };
 
   return (

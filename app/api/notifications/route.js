@@ -1,107 +1,128 @@
 import { NextResponse } from 'next/server';
+import prisma from '../../../lib/prisma';
+import { getAuthUser } from '../../../lib/auth';
 
-// Simulated notifications
-let notifications = [
-  {
-    id: 1,
-    type: 'reminder',
-    title: 'Waktunya Menyiram!',
-    message: 'Kangkung dan Bayam Anda perlu disiram pagi ini',
-    date: '202.5-01-12 06:00',
-    read: false,
-    icon: '💧',
-    userId: 1,
-  },
-  {
-    id: 2,
-    type: 'harvest',
-    title: 'Siap Panen!',
-    message: 'Bayam Anda sudah siap dipanen (ditanam 30 hari lalu)',
-    date: '202.5-01-11 08:00',
-    read: false,
-    icon: '🌿',
-    userId: 1,
-  },
-  {
-    id: 3,
-    type: 'stock',
-    title: 'Bibit Baru Tersedia',
-    message: 'Bibit Tomat Cherry baru saja tersedia di Bank Bibit',
-    date: '202.5-01-10 14:30',
-    read: true,
-    icon: '🌱',
-    userId: 1,
-  },
-];
-
-// GET - Get notifications
 export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const userId = searchParams.get('userId');
-  const unread = searchParams.get('unread');
+  try {
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId');
+    const unread = searchParams.get('unread');
 
-  let filteredNotifications = notifications;
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'userId diperlukan' },
+        { status: 400 }
+      );
+    }
 
-  if (userId) {
-    filteredNotifications = notifications.filter(n => n.userId === parseInt(userId));
+    const where = { userId: parseInt(userId) };
+    if (unread === 'true') {
+      where.read = false;
+    }
+
+    const notifications = await prisma.notification.findMany({
+      where,
+      orderBy: { date: 'desc' },
+    });
+
+    return NextResponse.json(notifications);
+  } catch (error) {
+    console.error('Notifications GET error:', error);
+    return NextResponse.json(
+      { error: 'Terjadi kesalahan server' },
+      { status: 500 }
+    );
   }
-
-  if (unread === 'true') {
-    filteredNotifications = filteredNotifications.filter(n => !n.read);
-  }
-
-  return NextResponse.json(filteredNotifications);
 }
 
-// POST - Create notification
 export async function POST(request) {
-  const body = await request.json();
+  try {
+    const auth = await getAuthUser(request);
+    if (!auth) {
+      return NextResponse.json({ error: 'Belum login' }, { status: 401 });
+    }
 
-  const newNotification = {
-    id: Date.now(),
-    date: new Date().toISOString(),
-    read: false,
-    ...body,
-  };
+    const body = await request.json();
+    const { userId, type, title, message, icon } = body;
 
-  notifications.push(newNotification);
+    const notification = await prisma.notification.create({
+      data: {
+        userId: parseInt(userId),
+        type,
+        title,
+        message,
+        icon,
+        read: false,
+      },
+    });
 
-  return NextResponse.json(
-    { message: 'Notification created', notification: newNotification },
-    { status: 201 }
-  );
+    return NextResponse.json(
+      { message: 'Notification created', notification },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error('Notifications POST error:', error);
+    return NextResponse.json(
+      { error: 'Terjadi kesalahan server' },
+      { status: 500 }
+    );
+  }
 }
 
-// PUT - Mark notification as read
 export async function PUT(request) {
-  const body = await request.json();
-  const { notificationId, markAll } = body;
+  try {
+    const auth = await getAuthUser(request);
+    if (!auth) {
+      return NextResponse.json({ error: 'Belum login' }, { status: 401 });
+    }
 
-  if (markAll) {
-    notifications = notifications.map(n => ({ ...n, read: true }));
-    return NextResponse.json({ message: 'All notifications marked as read' });
+    const body = await request.json();
+    const { notificationId, markAll, userId } = body;
+
+    if (markAll) {
+      const targetUserId = userId ? parseInt(userId) : auth.id;
+      await prisma.notification.updateMany({
+        where: { userId: targetUserId },
+        data: { read: true },
+      });
+      return NextResponse.json({ message: 'All notifications marked as read' });
+    }
+
+    const notification = await prisma.notification.update({
+      where: { id: parseInt(notificationId) },
+      data: { read: true },
+    });
+
+    return NextResponse.json({ message: 'Notification marked as read', notification });
+  } catch (error) {
+    console.error('Notifications PUT error:', error);
+    return NextResponse.json(
+      { error: 'Terjadi kesalahan server' },
+      { status: 500 }
+    );
   }
-
-  const notificationIndex = notifications.findIndex(n => n.id === parseInt(notificationId));
-
-  if (notificationIndex === -1) {
-    return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
-  }
-
-  notifications[notificationIndex] = {
-    ...notifications[notificationIndex],
-    read: true,
-  };
-
-  return NextResponse.json({ message: 'Notification marked as read', notification: notifications[notificationIndex] });
 }
 
-// DELETE - Delete notification
 export async function DELETE(request) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
+  try {
+    const auth = await getAuthUser(request);
+    if (!auth) {
+      return NextResponse.json({ error: 'Belum login' }, { status: 401 });
+    }
 
-  notifications = notifications.filter(n => n.id !== parseInt(id));
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
 
-  return NextResponse.json({ message: 'Notification deleted' });
+    await prisma.notification.delete({
+      where: { id: parseInt(id) },
+    });
+
+    return NextResponse.json({ message: 'Notification deleted' });
+  } catch (error) {
+    console.error('Notifications DELETE error:', error);
+    return NextResponse.json(
+      { error: 'Terjadi kesalahan server' },
+      { status: 500 }
+    );
+  }
 }

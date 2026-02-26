@@ -4,8 +4,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Icon from '../shared/Icon';
 import Badge from '../shared/Badge';
 import { CircularProgress } from '../shared/ProgressBar';
+import AiFabChat from '../shared/AiFabChat';
 import { useAdminMqtt } from '../../hooks/useAdminMqtt';
 import { vegetables } from '../../data/staticData';
+import { useApi } from '../../hooks/useApi';
 
 const AdminDashboard = () => {
   const [activeMenu, setActiveMenu] = useState('dashboard');
@@ -16,6 +18,26 @@ const AdminDashboard = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('device');
   const [commandFeedback, setCommandFeedback] = useState(null);
+  const [articles, setArticles] = useState([]);
+  const [articlesLoading, setArticlesLoading] = useState(false);
+  const [articleEditor, setArticleEditor] = useState(null);
+  const [showCreateArticle, setShowCreateArticle] = useState(false);
+  const [newArticle, setNewArticle] = useState({
+    title: '',
+    slug: '',
+    excerpt: '',
+    content: '',
+    category: 'Gizi Keluarga',
+    readTime: '5 menit',
+    author: 'Admin EduPangan',
+    status: 'draft',
+    tags: '',
+  });
+  const [isCreatingArticle, setIsCreatingArticle] = useState(false);
+  const [isDeletingArticle, setIsDeletingArticle] = useState(false);
+  const [isSavingArticle, setIsSavingArticle] = useState(false);
+  const [articleError, setArticleError] = useState('');
+  const { get, post, patch, delete: del } = useApi('/api');
 
   const {
     isConnected,
@@ -38,6 +60,7 @@ const AdminDashboard = () => {
     { id: 'devices', label: 'Semua Device', icon: 'deviceMobile' },
     { id: 'alerts', label: 'Notifikasi', icon: 'bell' },
     { id: 'seeds', label: 'Stok Bibit', icon: 'gift' },
+    { id: 'articles', label: 'Artikel Gizi', icon: 'document' },
   ];
 
   const deviceList = useMemo(
@@ -103,6 +126,168 @@ const AdminDashboard = () => {
     const timer = setTimeout(() => setCommandFeedback(null), 2200);
     return () => clearTimeout(timer);
   }, [commandFeedback]);
+
+  useEffect(() => {
+    if (activeMenu !== 'articles') return;
+
+    const loadArticles = async () => {
+      setArticlesLoading(true);
+      setArticleError('');
+      try {
+        const data = await post('/articles', { status: 'all', limit: 200 });
+        setArticles(Array.isArray(data) ? data : []);
+      } catch (error) {
+        setArticleError(error.message || 'Gagal memuat artikel');
+      } finally {
+        setArticlesLoading(false);
+      }
+    };
+
+    loadArticles();
+  }, [activeMenu, post]);
+
+  const openArticleEditor = async (slug) => {
+    try {
+      const detail = await get(`/articles/${slug}`);
+      setArticleEditor({
+        originalSlug: detail.slug,
+        slug: detail.slug,
+        title: detail.title || '',
+        excerpt: detail.excerpt || '',
+        content: detail.content || '',
+        category: detail.category || 'Gizi Keluarga',
+        readTime: detail.readTime || '5 menit',
+        author: detail.author || 'Tim EduPangan',
+        status: detail.status || 'published',
+        tags: Array.isArray(detail.tags) ? detail.tags.join(', ') : '',
+      });
+      setArticleError('');
+    } catch (error) {
+      setArticleError(error.message || 'Gagal memuat detail artikel');
+    }
+  };
+
+  const closeArticleEditor = () => {
+    setArticleEditor(null);
+    setIsSavingArticle(false);
+  };
+
+  const resetNewArticle = () => {
+    setNewArticle({
+      title: '',
+      slug: '',
+      excerpt: '',
+      content: '',
+      category: 'Gizi Keluarga',
+      readTime: '5 menit',
+      author: 'Admin EduPangan',
+      status: 'draft',
+      tags: '',
+    });
+  };
+
+  const handleCreateArticle = async (e) => {
+    e.preventDefault();
+    setIsCreatingArticle(true);
+    setArticleError('');
+
+    try {
+      const payload = {
+        action: 'create',
+        title: newArticle.title.trim(),
+        slug: newArticle.slug.trim() || undefined,
+        excerpt: newArticle.excerpt.trim(),
+        content: newArticle.content.trim(),
+        category: newArticle.category.trim(),
+        readTime: newArticle.readTime.trim(),
+        author: newArticle.author.trim(),
+        status: newArticle.status,
+        tags: newArticle.tags
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+      };
+
+      const result = await post('/articles', payload);
+      const created = result.article;
+
+      setArticles((prev) => [created, ...prev]);
+      setCommandFeedback({
+        type: 'success',
+        message: `Artikel "${created.title}" berhasil dibuat`,
+      });
+      setShowCreateArticle(false);
+      resetNewArticle();
+    } catch (error) {
+      setArticleError(error.message || 'Gagal membuat artikel');
+    } finally {
+      setIsCreatingArticle(false);
+    }
+  };
+
+  const handleDeleteArticle = async (slug, title) => {
+    if (!confirm(`Hapus artikel "${title}"?`)) return;
+
+    setIsDeletingArticle(true);
+    setArticleError('');
+    try {
+      await del(`/articles/${slug}`);
+      setArticles((prev) => prev.filter((item) => item.slug !== slug));
+      if (articleEditor?.originalSlug === slug) {
+        closeArticleEditor();
+      }
+      setCommandFeedback({
+        type: 'success',
+        message: `Artikel "${title}" berhasil dihapus`,
+      });
+    } catch (error) {
+      setArticleError(error.message || 'Gagal menghapus artikel');
+    } finally {
+      setIsDeletingArticle(false);
+    }
+  };
+
+  const handleSaveArticle = async (e) => {
+    e.preventDefault();
+    if (!articleEditor?.originalSlug) return;
+
+    setIsSavingArticle(true);
+    setArticleError('');
+
+    try {
+      const payload = {
+        title: articleEditor.title.trim(),
+        slug: articleEditor.slug.trim(),
+        excerpt: articleEditor.excerpt.trim(),
+        content: articleEditor.content.trim(),
+        category: articleEditor.category.trim(),
+        readTime: articleEditor.readTime.trim(),
+        author: articleEditor.author.trim(),
+        status: articleEditor.status,
+        tags: articleEditor.tags
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+      };
+
+      const result = await patch(`/articles/${articleEditor.originalSlug}`, payload);
+      const updated = result.article;
+
+      setArticles((prev) => prev.map((item) => (
+        item.id === updated.id ? updated : item
+      )));
+
+      setCommandFeedback({
+        type: 'success',
+        message: `Artikel "${updated.title}" berhasil diperbarui`,
+      });
+      closeArticleEditor();
+    } catch (error) {
+      setArticleError(error.message || 'Gagal menyimpan artikel');
+    } finally {
+      setIsSavingArticle(false);
+    }
+  };
 
   const getStatusBadge = (device) => {
     if (!device.online) {
@@ -747,8 +932,358 @@ const AdminDashboard = () => {
               </div>
             </div>
           )}
+
+          {activeMenu === 'articles' && (
+            <div className="space-y-6">
+              <div className="neo-card p-6 border border-white/45">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                  <div>
+                    <h3 className="font-bold text-gray-800">Manajemen Artikel Gizi</h3>
+                    <p className="text-sm text-gray-500">Edit artikel untuk halaman edukasi mobile</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge>{articles.length} artikel</Badge>
+                    <button
+                      onClick={() => {
+                        setShowCreateArticle(true);
+                        setArticleError('');
+                      }}
+                      className="neo-button px-3 py-2 text-xs font-semibold text-green-600 border border-white/40"
+                    >
+                      <Icon name="plus" size={14} color="#16A34A" className="mr-1" />
+                      Buat Artikel
+                    </button>
+                  </div>
+                </div>
+
+                {articleError && (
+                  <div className="neo-inset p-3 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm mb-4">
+                    {articleError}
+                  </div>
+                )}
+
+                {articlesLoading ? (
+                  <div className="neo-inset p-4 rounded-xl flex items-center gap-2 text-sm text-gray-600">
+                    <Icon name="refresh" size={16} className="animate-spin" />
+                    Memuat daftar artikel...
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {articles.map((article) => (
+                      <div key={article.id} className="neo-inset p-4 rounded-xl border border-white/35">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-bold text-gray-800 truncate">{article.title}</p>
+                            <p className="text-xs text-gray-500 mt-1 line-clamp-2">{article.excerpt}</p>
+                            <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 flex-wrap">
+                              <span className="flex items-center gap-1">
+                                <Icon name="eye" size={12} /> {article.views} views
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Icon name="clock" size={12} /> {article.readTime}
+                              </span>
+                              <Badge variant={article.status === 'published' ? 'success' : 'default'}>
+                                {article.status}
+                              </Badge>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => openArticleEditor(article.slug)}
+                            className="neo-button px-4 py-2 text-sm font-semibold text-green-600 border border-white/40"
+                          >
+                            <Icon name="settings" size={16} color="#16A34A" className="mr-2" />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteArticle(article.slug, article.title)}
+                            disabled={isDeletingArticle}
+                            className="neo-button px-4 py-2 text-sm font-semibold text-red-600 border border-white/40 disabled:opacity-60"
+                          >
+                            <Icon name="trash" size={16} color="#DC2626" className="mr-2" />
+                            Hapus
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {articles.length === 0 && (
+                      <div className="text-center py-10">
+                        <div className="w-16 h-16 neo-inset rounded-2xl flex items-center justify-center mx-auto mb-3">
+                          <Icon name="document" size={24} color="#9CA3AF" />
+                        </div>
+                        <p className="font-semibold text-gray-700">Belum ada artikel</p>
+                        <p className="text-sm text-gray-500 mt-1">Jalankan seed atau generator artikel AI.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {showCreateArticle && (
+                <div className="neo-card p-6 border border-white/45">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h4 className="font-bold text-gray-800">Buat Artikel Baru</h4>
+                      <p className="text-sm text-gray-500">Tambahkan artikel edukasi gizi baru</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowCreateArticle(false);
+                        resetNewArticle();
+                      }}
+                      className="neo-button w-10 h-10 flex items-center justify-center"
+                    >
+                      <Icon name="xmark" size={18} color="#6B7280" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleCreateArticle} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Judul</label>
+                        <input
+                          value={newArticle.title}
+                          onChange={(e) => setNewArticle((prev) => ({ ...prev, title: e.target.value }))}
+                          className="w-full neo-inset rounded-xl px-3 py-2.5 bg-transparent text-sm text-gray-800 outline-none"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Slug (opsional)</label>
+                        <input
+                          value={newArticle.slug}
+                          onChange={(e) => setNewArticle((prev) => ({ ...prev, slug: e.target.value }))}
+                          className="w-full neo-inset rounded-xl px-3 py-2.5 bg-transparent text-sm text-gray-800 outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Kategori</label>
+                        <input
+                          value={newArticle.category}
+                          onChange={(e) => setNewArticle((prev) => ({ ...prev, category: e.target.value }))}
+                          className="w-full neo-inset rounded-xl px-3 py-2.5 bg-transparent text-sm text-gray-800 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Durasi Baca</label>
+                        <input
+                          value={newArticle.readTime}
+                          onChange={(e) => setNewArticle((prev) => ({ ...prev, readTime: e.target.value }))}
+                          className="w-full neo-inset rounded-xl px-3 py-2.5 bg-transparent text-sm text-gray-800 outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Penulis</label>
+                        <input
+                          value={newArticle.author}
+                          onChange={(e) => setNewArticle((prev) => ({ ...prev, author: e.target.value }))}
+                          className="w-full neo-inset rounded-xl px-3 py-2.5 bg-transparent text-sm text-gray-800 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+                        <select
+                          value={newArticle.status}
+                          onChange={(e) => setNewArticle((prev) => ({ ...prev, status: e.target.value }))}
+                          className="w-full neo-inset rounded-xl px-3 py-2.5 bg-transparent text-sm text-gray-800 outline-none"
+                        >
+                          <option value="draft">draft</option>
+                          <option value="published">published</option>
+                          <option value="archived">archived</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Ringkasan</label>
+                      <textarea
+                        rows={3}
+                        value={newArticle.excerpt}
+                        onChange={(e) => setNewArticle((prev) => ({ ...prev, excerpt: e.target.value }))}
+                        className="w-full neo-inset rounded-xl px-3 py-2.5 bg-transparent text-sm text-gray-800 outline-none resize-y"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Konten</label>
+                      <textarea
+                        rows={6}
+                        value={newArticle.content}
+                        onChange={(e) => setNewArticle((prev) => ({ ...prev, content: e.target.value }))}
+                        className="w-full neo-inset rounded-xl px-3 py-2.5 bg-transparent text-sm text-gray-800 outline-none resize-y"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Tags (pisahkan dengan koma)</label>
+                      <input
+                        value={newArticle.tags}
+                        onChange={(e) => setNewArticle((prev) => ({ ...prev, tags: e.target.value }))}
+                        className="w-full neo-inset rounded-xl px-3 py-2.5 bg-transparent text-sm text-gray-800 outline-none"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCreateArticle(false);
+                          resetNewArticle();
+                        }}
+                        className="neo-button px-4 py-2.5 text-sm font-semibold text-gray-600 border border-white/45"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isCreatingArticle}
+                        className="bg-gradient-to-r from-green-600 to-green-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-60"
+                      >
+                        {isCreatingArticle ? 'Membuat...' : 'Simpan Artikel'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
+
+      {articleEditor && (
+        <div className="fixed inset-0 bg-black/45 flex items-center justify-center z-50 p-4" onClick={closeArticleEditor}>
+          <div className="neo-card w-full max-w-3xl p-5 sm:p-6 border border-white/45 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h3 className="font-bold text-xl text-gray-800">Edit Artikel</h3>
+                <p className="text-sm text-gray-500">Perbarui konten artikel edukasi gizi</p>
+              </div>
+              <button onClick={closeArticleEditor} className="neo-button w-10 h-10 flex items-center justify-center">
+                <Icon name="xmark" size={20} color="#6B7280" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveArticle} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Judul</label>
+                  <input
+                    value={articleEditor.title}
+                    onChange={(e) => setArticleEditor((prev) => ({ ...prev, title: e.target.value }))}
+                    className="w-full neo-inset rounded-xl px-3 py-2.5 bg-transparent text-sm text-gray-800 outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Slug</label>
+                  <input
+                    value={articleEditor.slug}
+                    onChange={(e) => setArticleEditor((prev) => ({ ...prev, slug: e.target.value }))}
+                    className="w-full neo-inset rounded-xl px-3 py-2.5 bg-transparent text-sm text-gray-800 outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Kategori</label>
+                  <input
+                    value={articleEditor.category}
+                    onChange={(e) => setArticleEditor((prev) => ({ ...prev, category: e.target.value }))}
+                    className="w-full neo-inset rounded-xl px-3 py-2.5 bg-transparent text-sm text-gray-800 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Durasi Baca</label>
+                  <input
+                    value={articleEditor.readTime}
+                    onChange={(e) => setArticleEditor((prev) => ({ ...prev, readTime: e.target.value }))}
+                    className="w-full neo-inset rounded-xl px-3 py-2.5 bg-transparent text-sm text-gray-800 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Penulis</label>
+                  <input
+                    value={articleEditor.author}
+                    onChange={(e) => setArticleEditor((prev) => ({ ...prev, author: e.target.value }))}
+                    className="w-full neo-inset rounded-xl px-3 py-2.5 bg-transparent text-sm text-gray-800 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+                  <select
+                    value={articleEditor.status}
+                    onChange={(e) => setArticleEditor((prev) => ({ ...prev, status: e.target.value }))}
+                    className="w-full neo-inset rounded-xl px-3 py-2.5 bg-transparent text-sm text-gray-800 outline-none"
+                  >
+                    <option value="draft">draft</option>
+                    <option value="published">published</option>
+                    <option value="archived">archived</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Ringkasan</label>
+                <textarea
+                  rows={3}
+                  value={articleEditor.excerpt}
+                  onChange={(e) => setArticleEditor((prev) => ({ ...prev, excerpt: e.target.value }))}
+                  className="w-full neo-inset rounded-xl px-3 py-2.5 bg-transparent text-sm text-gray-800 outline-none resize-y"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Konten</label>
+                <textarea
+                  rows={8}
+                  value={articleEditor.content}
+                  onChange={(e) => setArticleEditor((prev) => ({ ...prev, content: e.target.value }))}
+                  className="w-full neo-inset rounded-xl px-3 py-2.5 bg-transparent text-sm text-gray-800 outline-none resize-y"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Tags (pisahkan dengan koma)</label>
+                <input
+                  value={articleEditor.tags}
+                  onChange={(e) => setArticleEditor((prev) => ({ ...prev, tags: e.target.value }))}
+                  className="w-full neo-inset rounded-xl px-3 py-2.5 bg-transparent text-sm text-gray-800 outline-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button type="button" onClick={closeArticleEditor} className="neo-button px-4 py-2.5 text-sm font-semibold text-gray-600 border border-white/45">
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingArticle}
+                  className="bg-gradient-to-r from-green-600 to-green-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-60"
+                >
+                  {isSavingArticle ? 'Menyimpan...' : 'Simpan Perubahan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <AiFabChat mode="admin" userName="Admin" bottomOffsetClass="bottom-6" />
 
       {/* Device Detail Modal */}
       {selectedDevice && (

@@ -5,7 +5,6 @@ import Icon from '../shared/Icon';
 import Badge from '../shared/Badge';
 import { ListSkeleton } from '../shared/Skeleton';
 import { useApi } from '../../hooks/useApi';
-import { useNotifications } from '../../hooks/useNotifications';
 import { vegetables } from '../../data/staticData';
 
 const KebunSaya = ({ onNavigateBack, onNavigate, userId = 1 }) => {
@@ -22,7 +21,6 @@ const KebunSaya = ({ onNavigateBack, onNavigate, userId = 1 }) => {
   });
 
   const { get, post, put, del, loading, error } = useApi('/api');
-  const { notifyPlanting } = useNotifications();
 
   const loadGardenData = useCallback(async () => {
     try {
@@ -72,7 +70,14 @@ const KebunSaya = ({ onNavigateBack, onNavigate, userId = 1 }) => {
           },
         });
 
-        notifyPlanting(vegetable.name, quantity);
+        await post('/notifications', {
+          userId,
+          type: 'planting',
+          title: 'Bibit Ditanam!',
+          message: `${quantity} bibit ${vegetable.name} telah ditanam`,
+          icon: '🌱',
+        });
+
         alert('Tanaman berhasil ditambahkan!');
 
         loadGardenData();

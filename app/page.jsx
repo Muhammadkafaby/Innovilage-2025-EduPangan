@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import SplashScreen from '../components/mobile/SplashScreen';
 import Login from '../components/mobile/Login';
 import Register from '../components/mobile/Register';
@@ -12,62 +12,95 @@ import Edukasi from '../components/mobile/Edukasi';
 import DeviceMonitor from '../components/mobile/DeviceMonitor';
 import KebunSaya from '../components/mobile/KebunSaya';
 import Profil from '../components/mobile/Profil';
+import AiFabChat from '../components/shared/AiFabChat';
 import { ToastProvider } from '../hooks/useToast';
 import ToastContainer from '../components/shared/Toast';
-import { useGardenData } from '../hooks/useGardenData';
-import { useNotifications } from '../hooks/useNotifications';
+import { useAuth } from '../hooks/useAuth';
+import { useApi } from '../hooks/useApi';
 
 export default function Home() {
   const [currentPage, setCurrentPage] = useState('splash');
   const [user, setUser] = useState(null);
+  const [harvests, setHarvests] = useState([]);
+  const { user: sessionUser, loading: authLoading, refreshUser, logout } = useAuth();
+  const { get } = useApi('/api');
 
-  const { addPlant, plants } = useGardenData();
-  const { notifyPlanting } = useNotifications();
+  useEffect(() => {
+    if (!authLoading) {
+      setUser(sessionUser);
+    }
+  }, [sessionUser, authLoading]);
+
+  useEffect(() => {
+    if (authLoading || currentPage === 'splash') return;
+    if (!sessionUser && !['login', 'register'].includes(currentPage)) {
+      setCurrentPage('login');
+    }
+  }, [authLoading, sessionUser, currentPage]);
+
+  useEffect(() => {
+    const loadHarvests = async () => {
+      if (!user?.id) {
+        setHarvests([]);
+        return;
+      }
+
+      try {
+        const data = await get('/garden', { userId: user.id, type: 'harvests' });
+        setHarvests(data || []);
+      } catch (error) {
+        console.error('Failed to load harvests:', error);
+        setHarvests([]);
+      }
+    };
+
+    loadHarvests();
+  }, [user?.id, get]);
 
   const navigate = (page) => {
     setCurrentPage(page);
   };
 
   const handleLogin = (credentials) => {
-    setUser({
-      name: credentials.name,
-      deviceNumber: credentials.deviceNumber,
-      deviceId: credentials.deviceId,
-      username: credentials.username,
-      password: credentials.password,
-      rw: '01',
-    });
+    setUser(credentials);
+    refreshUser();
     navigate('dashboard');
   };
 
   const handleRegister = (formData) => {
-    setUser({
-      name: formData.fullName,
-      rw: formData.rw,
-      phone: formData.phoneNumber,
-    });
-    navigate('dashboard');
-  };
-
-  const handleOrder = (orderData) => {
-    addPlant({
-      name: orderData.vegetable.name,
-      quantity: orderData.quantity,
-      growthPeriod: orderData.vegetable.growthPeriod,
-      category: orderData.vegetable.category
-    });
-    notifyPlanting(orderData.vegetable.name, orderData.quantity);
-    alert(`Berhasil memesan ${orderData.quantity} bibit ${orderData.vegetable.name}!`);
-    navigate('dashboard');
-  };
-
-  const handleSubmitPanen = (harvestData) => {
-    alert(`Berhasil mencatat panen ${harvestData.quantity} ${harvestData.unit} ${harvestData.plantType}!`);
-    navigate('dashboard');
-  };
-
-  const handleLogout = () => {
     setUser(null);
+    alert('Pendaftaran berhasil. Silakan login untuk melanjutkan.');
+    navigate('login');
+  };
+
+  const handleOrder = () => {
+    navigate('dashboard');
+  };
+
+  const handleSubmitPanen = async () => {
+    if (user?.id) {
+      try {
+        const data = await get('/garden', { userId: user.id, type: 'harvests' });
+        setHarvests(data || []);
+      } catch (error) {
+        console.error('Failed to refresh harvests:', error);
+      }
+    }
+    navigate('dashboard');
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    setUser(null);
+    setHarvests([]);
+    navigate('login');
+  };
+
+  const handleSplashComplete = () => {
+    if (sessionUser) {
+      navigate('dashboard');
+      return;
+    }
     navigate('login');
   };
 
@@ -77,7 +110,7 @@ export default function Home() {
         <ToastContainer />
         
         {currentPage === 'splash' && (
-          <SplashScreen onComplete={() => navigate('login')} />
+          <SplashScreen onComplete={handleSplashComplete} />
         )}
 
         {currentPage === 'login' && (
@@ -95,13 +128,14 @@ export default function Home() {
         )}
 
         {currentPage === 'dashboard' && (
-          <Dashboard user={user} onNavigate={navigate} onLogout={handleLogout} />
+          <Dashboard user={user} onNavigate={navigate} onLogout={handleLogout} userId={user?.id} />
         )}
 
         {currentPage === 'bank-bibit' && (
           <BankBibit
             onNavigateBack={() => navigate('dashboard')}
             onOrder={handleOrder}
+            userId={user?.id}
           />
         )}
 
@@ -109,13 +143,14 @@ export default function Home() {
           <CatatPanen
             onNavigateBack={() => navigate('dashboard')}
             onSubmit={handleSubmitPanen}
+            userId={user?.id}
           />
         )}
 
         {currentPage === 'menu-gizi' && (
           <MenuGizi
             onNavigateBack={() => navigate('dashboard')}
-            userHarvests={plants}
+            userHarvests={harvests}
           />
         )}
 
@@ -134,6 +169,7 @@ export default function Home() {
           <KebunSaya
             onNavigateBack={() => navigate('dashboard')}
             onNavigate={navigate}
+            userId={user?.id}
           />
         )}
 
@@ -143,7 +179,12 @@ export default function Home() {
             onNavigateBack={() => navigate('dashboard')}
             onLogout={handleLogout}
             onNavigate={navigate}
+            userId={user?.id}
           />
+        )}
+
+        {currentPage !== 'splash' && currentPage !== 'login' && currentPage !== 'register' && (
+          <AiFabChat mode="user" userName={user?.name} bottomOffsetClass="bottom-24" />
         )}
       </div>
     </ToastProvider>

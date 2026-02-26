@@ -62,12 +62,20 @@ export function useApi(baseUrl = '/api') {
     });
   }, [apiCall]);
 
+  // PATCH request
+  const patch = useCallback(async (endpoint, data) => {
+    return apiCall(endpoint, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }, [apiCall]);
+
   // DELETE request
   const del = useCallback(async (endpoint) => {
     return apiCall(endpoint, { method: 'DELETE' });
   }, [apiCall]);
 
-  return { get, post, put, delete: del, loading, error };
+  return { get, post, put, patch, delete: del, loading, error };
 }
 
 export default useApi;

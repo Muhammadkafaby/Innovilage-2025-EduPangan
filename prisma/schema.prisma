@@ -1,0 +1,180 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int             @id @default(autoincrement())
+  name          String          @db.VarChar(100)
+  phone         String          @unique @db.VarChar(20)
+  rw            String          @db.VarChar(5)
+  pin           String          @db.VarChar(255)
+  role          String          @default("peserta") @db.VarChar(20)
+  kaderCode     String?         @db.VarChar(20)
+  gardenSize    String?         @default("0m²") @db.VarChar(20)
+  deviceId      Int?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  plants        Plant[]
+  activities    Activity[]
+  harvests      Harvest[]
+  notifications Notification[]
+  transactions  SeedTransaction[]
+  sessions      Session[]
+}
+
+model Session {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String   @unique @db.VarChar(500)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Device {
+  id          Int       @id @default(autoincrement())
+  deviceId    String    @unique @db.VarChar(50)
+  deviceNumber Int      @unique
+  username    String    @db.VarChar(100)
+  password    String    @db.VarChar(255)
+  status      String    @default("offline") @db.VarChar(20)
+  moisture    Float?
+  pumpStatus  String?   @db.VarChar(20)
+  pumpMode    String?   @db.VarChar(20)
+  lastSeen    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Plant {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  name         String   @db.VarChar(100)
+  category     String?  @db.VarChar(50)
+  quantity     Int
+  growthPeriod String?  @db.VarChar(50)
+  status       String   @default("tumbuh") @db.VarChar(20)
+  plantedDate  DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Activity {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  type          String    @db.VarChar(50)
+  plantName     String    @db.VarChar(100)
+  quantity      Float?
+  unit          String?   @db.VarChar(20)
+  status        String?   @db.VarChar(20)
+  expectedHarvest DateTime?
+  date          DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Harvest {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  plantType   String    @db.VarChar(100)
+  plantName   String?   @db.VarChar(100)
+  quantity    Float
+  unit        String    @default("kg") @db.VarChar(20)
+  harvestDate DateTime  @default(now())
+  notes       String?   @db.Text
+  photo       String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  type      String    @db.VarChar(50)
+  title     String    @db.VarChar(200)
+  message   String    @db.Text
+  icon      String?   @db.VarChar(20)
+  read      Boolean   @default(false)
+  date      DateTime  @default(now())
+  createdAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Seed {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(100)
+  scientificName String?  @db.VarChar(100)
+  category      String   @db.VarChar(50)
+  stockAvailable Int     @default(0)
+  unit          String   @default("bibit") @db.VarChar(20)
+  growthPeriod  String?  @db.VarChar(50)
+  waterNeeds    String?  @db.VarChar(50)
+  difficulty    String?  @db.VarChar(50)
+  price         Int      @default(0)
+  nutritionFacts Json?
+  tips          String?  @db.Text
+  image         String?  @db.VarChar(255)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  transactions  SeedTransaction[]
+}
+
+model SeedTransaction {
+  id                  Int      @id @default(autoincrement())
+  userId              Int
+  seedId              Int
+  transactionType     String   @db.VarChar(20)
+  quantity            Int
+  contributionPaid   Int?
+  contributionReceived Int?
+  status              String   @default("selesai") @db.VarChar(20)
+  date                DateTime @default(now())
+  createdAt           DateTime @default(now())
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seed                Seed    @relation(fields: [seedId], references: [id])
+}
+
+model NutritionArticle {
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(255)
+  slug        String   @unique @db.VarChar(255)
+  category    String   @default("Gizi Keluarga") @db.VarChar(100)
+  excerpt     String   @db.Text
+  content     String   @db.Text
+  author      String   @default("Tim EduPangan") @db.VarChar(100)
+  readTime    String   @default("5 menit") @db.VarChar(30)
+  views       Int      @default(0)
+  tags        Json?
+  source      String   @default("manual") @db.VarChar(20)
+  status      String   @default("published") @db.VarChar(20)
+  publishDate DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AiJobLog {
+  id          Int      @id @default(autoincrement())
+  jobType     String   @default("nutrition_article") @db.VarChar(50)
+  triggerType String   @default("scheduler") @db.VarChar(30)
+  status      String   @default("success") @db.VarChar(20)
+  topic       String?  @db.VarChar(150)
+  title       String?  @db.VarChar(255)
+  message     String?  @db.Text
+  durationMs  Int?
+  createdAt   DateTime @default(now())
+}
