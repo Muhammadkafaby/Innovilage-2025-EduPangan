@@ -40,6 +40,7 @@ const Login = ({ onLogin, onNavigateToRegister }) => {
           body: JSON.stringify({
             phoneNumber: phoneNumber.trim(),
             pin: pin.trim(),
+            ...(selectedDevice ? { deviceNumber: parseInt(selectedDevice, 10) } : {}),
           }),
         });
 

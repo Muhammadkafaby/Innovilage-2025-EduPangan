@@ -2,6 +2,35 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
+const RETRY_COUNT = Math.max(parseInt(process.env.AI_WORKER_RETRY_COUNT || '1', 10), 0);
+const RETRY_DELAY_MS = Math.max(parseInt(process.env.AI_WORKER_RETRY_DELAY_MS || '4000', 10), 500);
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithRetry(url, options) {
+  let lastError;
+
+  for (let attempt = 0; attempt <= RETRY_COUNT; attempt += 1) {
+    try {
+      const response = await fetch(url, options);
+      if (!response.ok) {
+        throw new Error(`AI request gagal: ${response.status} ${await response.text()}`);
+      }
+      return response;
+    } catch (error) {
+      lastError = error;
+      if (attempt < RETRY_COUNT) {
+        console.warn(`[AI Worker] retry ${attempt + 1}/${RETRY_COUNT} setelah error: ${error.message || error}`);
+        await sleep(RETRY_DELAY_MS);
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 async function runGeneration(triggerType = 'scheduler') {
   const startedAt = Date.now();
 
@@ -42,7 +71,7 @@ async function runGeneration(triggerType = 'scheduler') {
       'Topik wajib diikuti sesuai permintaan user.',
     ].join('\n');
 
-    const response = await fetch('https://api.biznetgio.ai/v1/chat/completions', {
+    const response = await fetchWithRetry('https://api.biznetgio.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -57,10 +86,6 @@ async function runGeneration(triggerType = 'scheduler') {
         ],
       }),
     });
-
-    if (!response.ok) {
-      throw new Error(`AI request gagal: ${response.status} ${await response.text()}`);
-    }
 
     const payload = await response.json();
     const raw = payload?.choices?.[0]?.message?.content;

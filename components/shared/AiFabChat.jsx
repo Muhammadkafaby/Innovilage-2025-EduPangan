@@ -329,9 +329,73 @@ export default function AiFabChat({ mode = 'user', userName, bottomOffsetClass =
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState('');
+  const [adminActionLoading, setAdminActionLoading] = useState(false);
+  const [showJobLogs, setShowJobLogs] = useState(false);
+  const [jobLogs, setJobLogs] = useState([]);
 
   const title = mode === 'admin' ? 'AI Admin EduPangan' : 'AI Asisten Gizi';
   const quickPrompts = useMemo(() => defaultQuickPrompts[mode] || defaultQuickPrompts.user, [mode]);
+
+  const runGenerateNow = async () => {
+    if (mode !== 'admin' || adminActionLoading) return;
+
+    setAdminActionLoading(true);
+    setError('');
+    try {
+      const response = await fetch('/api/ai/generate-article', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Gagal generate artikel AI');
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: `✅ Artikel AI baru berhasil dibuat:\n**${data.article?.title || '-'}**\nTopik: ${data.topic || '-'}\nDurasi proses: ${data.durationMs || '-'} ms`,
+        },
+      ]);
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: `⚠️ Generate artikel gagal: ${err.message || 'Terjadi kesalahan'}` },
+      ]);
+    } finally {
+      setAdminActionLoading(false);
+    }
+  };
+
+  const loadJobLogs = async () => {
+    if (mode !== 'admin' || adminActionLoading) return;
+
+    setAdminActionLoading(true);
+    setError('');
+    try {
+      const response = await fetch('/api/ai/jobs?limit=8', {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Gagal memuat AI job log');
+      }
+
+      setJobLogs(Array.isArray(data) ? data : []);
+      setShowJobLogs(true);
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: `⚠️ Gagal memuat job log: ${err.message || 'Terjadi kesalahan'}` },
+      ]);
+    } finally {
+      setAdminActionLoading(false);
+    }
+  };
 
   const sendMessage = async (text) => {
     const trimmed = cleanUserInput(text);
@@ -382,6 +446,46 @@ export default function AiFabChat({ mode = 'user', userName, bottomOffsetClass =
           </div>
 
           <div className="px-3 py-3 max-h-72 overflow-y-auto space-y-2 bg-white/30">
+            {mode === 'admin' && (
+              <div className="neo-inset rounded-xl p-2 border border-white/40">
+                <div className="flex gap-2">
+                  <button
+                    onClick={runGenerateNow}
+                    disabled={adminActionLoading}
+                    className="neo-button flex-1 text-[11px] px-2 py-2 text-green-700 border border-white/35 disabled:opacity-60"
+                  >
+                    <Icon name="sparkles" size={12} color="#15803D" className="mr-1" />
+                    Generate Sekarang
+                  </button>
+                  <button
+                    onClick={loadJobLogs}
+                    disabled={adminActionLoading}
+                    className="neo-button flex-1 text-[11px] px-2 py-2 text-blue-700 border border-white/35 disabled:opacity-60"
+                  >
+                    <Icon name="list" size={12} color="#1D4ED8" className="mr-1" />
+                    Lihat Job Log
+                  </button>
+                </div>
+
+                {showJobLogs && (
+                  <div className="mt-2 max-h-28 overflow-y-auto space-y-1 text-[11px] text-gray-700">
+                    {jobLogs.length === 0 ? (
+                      <p className="text-gray-500">Belum ada log AI.</p>
+                    ) : (
+                      jobLogs.map((log) => (
+                        <div key={log.id} className="rounded-lg px-2 py-1 bg-white/50 border border-white/30">
+                          <p className="font-semibold">
+                            {log.status === 'success' ? '✅' : '❌'} {log.title || log.topic || 'AI Job'}
+                          </p>
+                          <p className="text-gray-500">{new Date(log.createdAt).toLocaleString('id-ID')}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {messages.length === 0 && (
               <div className="space-y-2">
                 <p className="text-xs text-gray-600">Coba pertanyaan cepat:</p>

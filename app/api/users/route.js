@@ -22,7 +22,6 @@ export async function GET(request) {
         role: true,
         kaderCode: true,
         gardenSize: true,
-        deviceId: true,
         createdAt: true,
       },
       orderBy: { createdAt: 'desc' },

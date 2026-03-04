@@ -95,7 +95,7 @@ const DeviceMonitor = ({ user, onNavigateBack }) => {
               </div>
               <div>
                 <p className="text-xs text-gray-500">Device ID</p>
-                <p className="font-bold text-gray-800">Telyuk_{user?.deviceId}</p>
+                <p className="font-bold text-gray-800">Telyuk_{user?.deviceId || user?.deviceNumber || '-'}</p>
               </div>
             </div>
             <div className="text-right">

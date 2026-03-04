@@ -41,6 +41,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.16",
+    "concurrently": "^9.2.1",
     "es-abstract": "^1.24.1",
     "eslint": "^8.56.0",
     "eslint-config-next": "^14.0.0",

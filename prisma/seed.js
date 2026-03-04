@@ -20,7 +20,6 @@ async function main() {
         role: 'peserta',
         kaderCode: 'PKK2025',
         gardenSize: '15m²',
-        deviceId: 1,
       },
     }),
     prisma.user.upsert({
@@ -34,7 +33,6 @@ async function main() {
         role: 'peserta',
         kaderCode: 'PKK2025',
         gardenSize: '20m²',
-        deviceId: 2,
       },
     }),
     prisma.user.upsert({
@@ -48,12 +46,62 @@ async function main() {
         role: 'kader',
         kaderCode: 'KADER001',
         gardenSize: '25m²',
-        deviceId: 3,
       },
     }),
   ]);
 
   console.log(`Created ${users.length} users`);
+
+  await prisma.userDevice.upsert({
+    where: { userId: users[0].id },
+    update: {
+      deviceNumber: 1,
+      deviceId: '001',
+      username: 'Telyuk_001',
+      password: 'Telyuk_001_Sukses',
+    },
+    create: {
+      userId: users[0].id,
+      deviceNumber: 1,
+      deviceId: '001',
+      username: 'Telyuk_001',
+      password: 'Telyuk_001_Sukses',
+    },
+  });
+
+  await prisma.userDevice.upsert({
+    where: { userId: users[1].id },
+    update: {
+      deviceNumber: 2,
+      deviceId: '002',
+      username: 'Telyuk_002',
+      password: 'Telyuk_002_Sukses',
+    },
+    create: {
+      userId: users[1].id,
+      deviceNumber: 2,
+      deviceId: '002',
+      username: 'Telyuk_002',
+      password: 'Telyuk_002_Sukses',
+    },
+  });
+
+  await prisma.userDevice.upsert({
+    where: { userId: users[2].id },
+    update: {
+      deviceNumber: 3,
+      deviceId: '003',
+      username: 'Telyuk_003',
+      password: 'Telyuk_003_Sukses',
+    },
+    create: {
+      userId: users[2].id,
+      deviceNumber: 3,
+      deviceId: '003',
+      username: 'Telyuk_003',
+      password: 'Telyuk_003_Sukses',
+    },
+  });
 
   const seeds = [
     { name: 'Kangkung', scientificName: 'Ipomoea aquatica', category: 'Sayuran Hijau', stockAvailable: 150, growthPeriod: '25-30 hari', waterNeeds: 'Tinggi', difficulty: 'Mudah', price: 500, nutritionFacts: { vitamin: 'A, C, K', mineral: 'Zat Besi, Kalsium', calories: '19 per 100g' }, tips: 'Cocok ditanam di area dengan air mengalir atau sistem hidroponik' },

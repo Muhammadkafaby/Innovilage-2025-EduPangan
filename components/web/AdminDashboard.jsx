@@ -9,7 +9,7 @@ import { useAdminMqtt } from '../../hooks/useAdminMqtt';
 import { vegetables } from '../../data/staticData';
 import { useApi } from '../../hooks/useApi';
 
-const AdminDashboard = () => {
+const AdminDashboard = ({ adminUser, onLogout }) => {
   const [activeMenu, setActiveMenu] = useState('dashboard');
   const [selectedDevice, setSelectedDevice] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -19,6 +19,29 @@ const AdminDashboard = () => {
   const [sortBy, setSortBy] = useState('device');
   const [commandFeedback, setCommandFeedback] = useState(null);
   const [articles, setArticles] = useState([]);
+  const [seedStocks, setSeedStocks] = useState([]);
+  const [seedLoading, setSeedLoading] = useState(false);
+  const [seedError, setSeedError] = useState('');
+  const [savingSeedId, setSavingSeedId] = useState(null);
+  const [creatingSeed, setCreatingSeed] = useState(false);
+  const [newSeed, setNewSeed] = useState({
+    name: '',
+    scientificName: '',
+    category: '',
+    stockAvailable: '0',
+    price: '0',
+    unit: 'bibit',
+    growthPeriod: '',
+    waterNeeds: '',
+    difficulty: '',
+    tips: '',
+  });
+  const [selectedSeedIds, setSelectedSeedIds] = useState([]);
+  const [bulkStockValue, setBulkStockValue] = useState('');
+  const [bulkPriceValue, setBulkPriceValue] = useState('');
+  const [bulkSaving, setBulkSaving] = useState(false);
+  const [stockLogs, setStockLogs] = useState([]);
+  const [showStockLogs, setShowStockLogs] = useState(false);
   const [articlesLoading, setArticlesLoading] = useState(false);
   const [articleEditor, setArticleEditor] = useState(null);
   const [showCreateArticle, setShowCreateArticle] = useState(false);
@@ -37,7 +60,7 @@ const AdminDashboard = () => {
   const [isDeletingArticle, setIsDeletingArticle] = useState(false);
   const [isSavingArticle, setIsSavingArticle] = useState(false);
   const [articleError, setArticleError] = useState('');
-  const { get, post, patch, delete: del } = useApi('/api');
+  const { get, post, put, patch, delete: del } = useApi('/api');
 
   const {
     isConnected,
@@ -145,6 +168,163 @@ const AdminDashboard = () => {
 
     loadArticles();
   }, [activeMenu, post]);
+
+  useEffect(() => {
+    if (activeMenu !== 'seeds') return;
+
+    const loadSeedStocks = async () => {
+      setSeedLoading(true);
+      setSeedError('');
+      try {
+        const data = await get('/seeds', { type: 'stock' });
+        setSeedStocks(Array.isArray(data) ? data : []);
+      } catch (error) {
+        setSeedError(error.message || 'Gagal memuat stok bibit');
+      } finally {
+        setSeedLoading(false);
+      }
+    };
+
+    loadSeedStocks();
+  }, [activeMenu, get]);
+
+  const handleSeedFieldChange = (seedId, field, value) => {
+    setSeedStocks((prev) => prev.map((seed) => (
+      seed.id === seedId ? { ...seed, [field]: value } : seed
+    )));
+  };
+
+  const toggleSeedSelection = (seedId) => {
+    setSelectedSeedIds((prev) => (
+      prev.includes(seedId) ? prev.filter((id) => id !== seedId) : [...prev, seedId]
+    ));
+  };
+
+  const runBulkUpdate = async () => {
+    if (selectedSeedIds.length === 0) {
+      setSeedError('Pilih minimal 1 bibit untuk bulk update');
+      return;
+    }
+
+    const hasStock = String(bulkStockValue).trim() !== '';
+    const hasPrice = String(bulkPriceValue).trim() !== '';
+    if (!hasStock && !hasPrice) {
+      setSeedError('Isi stok atau harga untuk bulk update');
+      return;
+    }
+
+    setBulkSaving(true);
+    setSeedError('');
+
+    try {
+      for (const seedId of selectedSeedIds) {
+        await put('/seeds', {
+          seedId,
+          ...(hasStock ? { stockAvailable: bulkStockValue } : {}),
+          ...(hasPrice ? { price: bulkPriceValue } : {}),
+        });
+      }
+
+      const refreshed = await get('/seeds', { type: 'stock' });
+      setSeedStocks(Array.isArray(refreshed) ? refreshed : []);
+      setSelectedSeedIds([]);
+      setBulkStockValue('');
+      setBulkPriceValue('');
+
+      setCommandFeedback({
+        type: 'success',
+        message: `Bulk update berhasil untuk ${selectedSeedIds.length} bibit`,
+      });
+    } catch (error) {
+      setSeedError(error.message || 'Bulk update gagal');
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
+  const loadStockLogs = async () => {
+    setSeedError('');
+    try {
+      const logs = await get('/seeds', { type: 'stock-logs', limit: 30 });
+      setStockLogs(Array.isArray(logs) ? logs : []);
+      setShowStockLogs(true);
+    } catch (error) {
+      setSeedError(error.message || 'Gagal memuat riwayat perubahan stok');
+    }
+  };
+
+  const handleCreateSeed = async (e) => {
+    e.preventDefault();
+    setCreatingSeed(true);
+    setSeedError('');
+
+    try {
+      const result = await post('/seeds', {
+        type: 'create-seed',
+        name: newSeed.name,
+        scientificName: newSeed.scientificName,
+        category: newSeed.category,
+        stockAvailable: newSeed.stockAvailable,
+        price: newSeed.price,
+        unit: newSeed.unit,
+        growthPeriod: newSeed.growthPeriod,
+        waterNeeds: newSeed.waterNeeds,
+        difficulty: newSeed.difficulty,
+        tips: newSeed.tips,
+      });
+
+      setSeedStocks((prev) => [result.seed, ...prev]);
+      setNewSeed({
+        name: '',
+        scientificName: '',
+        category: '',
+        stockAvailable: '0',
+        price: '0',
+        unit: 'bibit',
+        growthPeriod: '',
+        waterNeeds: '',
+        difficulty: '',
+        tips: '',
+      });
+      setCommandFeedback({
+        type: 'success',
+        message: `Jenis bibit ${result.seed.name} berhasil ditambahkan`,
+      });
+    } catch (error) {
+      setSeedError(error.message || 'Gagal menambahkan jenis bibit baru');
+    } finally {
+      setCreatingSeed(false);
+    }
+  };
+
+  const handleSaveSeed = async (seed) => {
+    setSavingSeedId(seed.id);
+    setSeedError('');
+    try {
+      const result = await put('/seeds', {
+        seedId: seed.id,
+        stockAvailable: seed.stockAvailable,
+        price: seed.price,
+        category: seed.category,
+        growthPeriod: seed.growthPeriod,
+        waterNeeds: seed.waterNeeds,
+        difficulty: seed.difficulty,
+        tips: seed.tips,
+      });
+
+      setSeedStocks((prev) => prev.map((item) => (
+        item.id === seed.id ? result.seed : item
+      )));
+      setCommandFeedback({
+        type: 'success',
+        message: `Stok bibit ${seed.name} berhasil diperbarui`,
+      });
+    } catch (error) {
+      setSeedError(error.message || 'Gagal menyimpan perubahan stok bibit');
+    } finally {
+      setSavingSeedId(null);
+    }
+  };
 
   const openArticleEditor = async (slug) => {
     try {
@@ -476,9 +656,16 @@ const AdminDashboard = () => {
                 <Icon name="user" size={20} color="#4CAF50" />
               </div>
               <div className="flex-1 overflow-hidden">
-                <p className="font-semibold text-sm text-gray-800">Admin BUMDes</p>
-                <p className="text-xs text-gray-500">{stats.totalDevices || 0} Device</p>
+                <p className="font-semibold text-sm text-gray-800 truncate">{adminUser?.name || 'Admin BUMDes'}</p>
+                <p className="text-xs text-gray-500">Role: {adminUser?.role || 'admin'}</p>
               </div>
+              <button
+                onClick={onLogout}
+                className="neo-button w-9 h-9 flex items-center justify-center border border-white/40"
+                title="Logout"
+              >
+                <Icon name="arrowRight" size={16} color="#6B7280" />
+              </button>
             </div>
           </div>
         )}
@@ -906,29 +1093,267 @@ const AdminDashboard = () => {
               <div className="neo-card p-6 border border-white/45">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-bold text-gray-800">Stok Bibit</h3>
-                  <Badge>{vegetables.length} jenis</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge>{seedStocks.length || vegetables.length} jenis</Badge>
+                    <button
+                      onClick={loadStockLogs}
+                      className="neo-button px-3 py-1.5 text-xs font-semibold text-blue-600 border border-white/40"
+                    >
+                      <Icon name="list" size={14} color="#2563EB" className="mr-1" />
+                      Riwayat Stok
+                    </button>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {vegetables.map((veg) => (
-                    <div key={veg.id} className="neo-inset p-4 rounded-xl border border-white/30">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-12 h-12 neo-button rounded-xl flex items-center justify-center">
-                          <Icon name="sparkles" size={24} color="#4CAF50" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-gray-800">{veg.name}</p>
-                          <p className="text-xs text-gray-500">{veg.category}</p>
-                        </div>
+
+                {seedError && (
+                  <div className="neo-inset rounded-xl px-3 py-2 text-sm text-red-700 bg-red-50 border border-red-200 mb-3">
+                    {seedError}
+                  </div>
+                )}
+
+                {seedLoading ? (
+                  <div className="neo-inset p-4 rounded-xl flex items-center gap-2 text-sm text-gray-600">
+                    <Icon name="refresh" size={16} className="animate-spin" />
+                    Memuat stok bibit...
+                  </div>
+                ) : (
+                  <>
+                    <div className="neo-card p-4 border border-white/35 mb-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-bold text-gray-800">Tambah Jenis Bibit Baru</h4>
+                        <Badge variant="success">Admin/Kader</Badge>
                       </div>
-                      <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-                        <span className="text-sm text-gray-500">Stok tersedia</span>
-                        <span className={`font-bold ${veg.stockAvailable > 100 ? 'text-green-500' : veg.stockAvailable > 50 ? 'text-yellow-500' : 'text-red-500'}`}>
-                          {veg.stockAvailable} bibit
-                        </span>
+                      <form onSubmit={handleCreateSeed} className="space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <input
+                            value={newSeed.name}
+                            onChange={(e) => setNewSeed((prev) => ({ ...prev, name: e.target.value }))}
+                            placeholder="Nama bibit (contoh: Brokoli)"
+                            className="neo-button rounded-lg px-3 py-2 text-sm text-gray-800 outline-none border border-white/40"
+                            required
+                          />
+                          <input
+                            value={newSeed.scientificName}
+                            onChange={(e) => setNewSeed((prev) => ({ ...prev, scientificName: e.target.value }))}
+                            placeholder="Nama ilmiah (opsional)"
+                            className="neo-button rounded-lg px-3 py-2 text-sm text-gray-800 outline-none border border-white/40"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                          <input
+                            value={newSeed.category}
+                            onChange={(e) => setNewSeed((prev) => ({ ...prev, category: e.target.value }))}
+                            placeholder="Kategori"
+                            className="neo-button rounded-lg px-3 py-2 text-sm text-gray-800 outline-none border border-white/40"
+                            required
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            value={newSeed.stockAvailable}
+                            onChange={(e) => setNewSeed((prev) => ({ ...prev, stockAvailable: e.target.value }))}
+                            placeholder="Stok"
+                            className="neo-button rounded-lg px-3 py-2 text-sm text-gray-800 outline-none border border-white/40"
+                            required
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            value={newSeed.price}
+                            onChange={(e) => setNewSeed((prev) => ({ ...prev, price: e.target.value }))}
+                            placeholder="Harga"
+                            className="neo-button rounded-lg px-3 py-2 text-sm text-gray-800 outline-none border border-white/40"
+                            required
+                          />
+                          <input
+                            value={newSeed.unit}
+                            onChange={(e) => setNewSeed((prev) => ({ ...prev, unit: e.target.value }))}
+                            placeholder="Unit"
+                            className="neo-button rounded-lg px-3 py-2 text-sm text-gray-800 outline-none border border-white/40"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <input
+                            value={newSeed.growthPeriod}
+                            onChange={(e) => setNewSeed((prev) => ({ ...prev, growthPeriod: e.target.value }))}
+                            placeholder="Masa tumbuh"
+                            className="neo-button rounded-lg px-3 py-2 text-sm text-gray-800 outline-none border border-white/40"
+                          />
+                          <input
+                            value={newSeed.waterNeeds}
+                            onChange={(e) => setNewSeed((prev) => ({ ...prev, waterNeeds: e.target.value }))}
+                            placeholder="Kebutuhan air"
+                            className="neo-button rounded-lg px-3 py-2 text-sm text-gray-800 outline-none border border-white/40"
+                          />
+                          <input
+                            value={newSeed.difficulty}
+                            onChange={(e) => setNewSeed((prev) => ({ ...prev, difficulty: e.target.value }))}
+                            placeholder="Tingkat kesulitan"
+                            className="neo-button rounded-lg px-3 py-2 text-sm text-gray-800 outline-none border border-white/40"
+                          />
+                        </div>
+
+                        <textarea
+                          rows={2}
+                          value={newSeed.tips}
+                          onChange={(e) => setNewSeed((prev) => ({ ...prev, tips: e.target.value }))}
+                          placeholder="Tips penanaman (opsional)"
+                          className="w-full neo-button rounded-lg px-3 py-2 text-sm text-gray-800 outline-none border border-white/40 resize-y"
+                        />
+
+                        <div className="flex justify-end">
+                          <button
+                            type="submit"
+                            disabled={creatingSeed}
+                            className="bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-60"
+                          >
+                            {creatingSeed ? 'Menambahkan...' : 'Tambah Jenis Bibit'}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+
+                    <div className="neo-inset rounded-xl p-3 border border-white/35 mb-4">
+                      <p className="text-xs font-semibold text-gray-600 mb-2">Bulk Update Stok Bibit</p>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <input
+                          type="number"
+                          min="0"
+                          value={bulkStockValue}
+                          onChange={(e) => setBulkStockValue(e.target.value)}
+                          placeholder="Stok baru"
+                          className="neo-button rounded-lg px-2 py-2 text-sm text-gray-800 outline-none border border-white/40"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          value={bulkPriceValue}
+                          onChange={(e) => setBulkPriceValue(e.target.value)}
+                          placeholder="Harga baru"
+                          className="neo-button rounded-lg px-2 py-2 text-sm text-gray-800 outline-none border border-white/40"
+                        />
+                        <button
+                          onClick={runBulkUpdate}
+                          disabled={bulkSaving}
+                          className="bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg px-3 py-2 text-sm font-semibold disabled:opacity-60"
+                        >
+                          {bulkSaving ? 'Memproses...' : `Update ${selectedSeedIds.length} Bibit`}
+                        </button>
+                        <button
+                          onClick={() => setSelectedSeedIds(seedStocks.map((s) => s.id))}
+                          className="neo-button rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 border border-white/40"
+                        >
+                          Pilih Semua
+                        </button>
                       </div>
                     </div>
-                  ))}
-                </div>
+
+                    {showStockLogs && (
+                      <div className="neo-inset rounded-xl p-3 border border-white/35 mb-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-semibold text-gray-600">Riwayat Perubahan Stok</p>
+                          <button
+                            onClick={() => setShowStockLogs(false)}
+                            className="neo-button w-7 h-7 flex items-center justify-center"
+                          >
+                            <Icon name="xmark" size={14} color="#6B7280" />
+                          </button>
+                        </div>
+                        <div className="max-h-44 overflow-y-auto space-y-2">
+                          {stockLogs.length === 0 ? (
+                            <p className="text-xs text-gray-500">Belum ada log perubahan.</p>
+                          ) : (
+                            stockLogs.map((log) => (
+                              <div key={log.id} className="bg-white/50 border border-white/35 rounded-lg p-2 text-xs">
+                                <p className="font-semibold text-gray-700">{log.seed?.name || '-'} oleh {log.user?.name || '-'}</p>
+                                <p className="text-gray-500">Stok: {log.oldStock ?? '-'} → {log.newStock ?? '-'}, Harga: {log.oldPrice ?? '-'} → {log.newPrice ?? '-'}</p>
+                                <p className="text-gray-400">{new Date(log.createdAt).toLocaleString('id-ID')}</p>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {seedStocks.map((seed) => (
+                      <div key={seed.id} className="neo-inset p-4 rounded-xl border border-white/30">
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="flex items-center gap-2 text-xs text-gray-600">
+                            <input
+                              type="checkbox"
+                              checked={selectedSeedIds.includes(seed.id)}
+                              onChange={() => toggleSeedSelection(seed.id)}
+                              className="accent-green-600"
+                            />
+                            Pilih bulk
+                          </label>
+                        </div>
+
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-12 h-12 neo-button rounded-xl flex items-center justify-center">
+                            <Icon name="sparkles" size={24} color="#4CAF50" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-bold text-gray-800 truncate">{seed.name}</p>
+                            <p className="text-xs text-gray-500">{seed.scientificName || 'Tanpa nama ilmiah'}</p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-600 mb-1">Stok</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={seed.stockAvailable}
+                                onChange={(e) => handleSeedFieldChange(seed.id, 'stockAvailable', e.target.value)}
+                                className="w-full neo-button rounded-lg px-2 py-1.5 text-sm text-gray-800 outline-none border border-white/40"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-600 mb-1">Harga</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={seed.price}
+                                onChange={(e) => handleSeedFieldChange(seed.id, 'price', e.target.value)}
+                                className="w-full neo-button rounded-lg px-2 py-1.5 text-sm text-gray-800 outline-none border border-white/40"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">Kategori</label>
+                            <input
+                              value={seed.category || ''}
+                              onChange={(e) => handleSeedFieldChange(seed.id, 'category', e.target.value)}
+                              className="w-full neo-button rounded-lg px-2 py-1.5 text-sm text-gray-800 outline-none border border-white/40"
+                            />
+                          </div>
+
+                          <button
+                            onClick={() => handleSaveSeed(seed)}
+                            disabled={savingSeedId === seed.id}
+                            className="w-full bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg py-2 text-sm font-semibold disabled:opacity-60"
+                          >
+                            {savingSeedId === seed.id ? 'Menyimpan...' : 'Simpan Perubahan'}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {!seedLoading && seedStocks.length === 0 && (
+                      <div className="col-span-full text-center py-8 text-sm text-gray-500">
+                        Belum ada data bibit.
+                      </div>
+                    )}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}

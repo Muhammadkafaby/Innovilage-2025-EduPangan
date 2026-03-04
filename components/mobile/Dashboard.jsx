@@ -142,7 +142,7 @@ const Dashboard = ({ user, onNavigate, userId = 1 }) => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Icon name="deviceMobile" size={14} color="#9CA3AF" />
-              <p className="text-gray-400 text-xs">Telyuk_{user?.deviceId || '001'}</p>
+              <p className="text-gray-400 text-xs">Device IoT dipilih saat login</p>
             </div>
             <h1 className="text-2xl font-bold text-gray-800">
               Halo, <span className="text-green-500">{user?.name || 'Petani'}</span>

@@ -3,10 +3,12 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../../../../lib/prisma';
 import { z } from 'zod';
+import { getDeviceCredentials } from '../../../../lib/mqttConfig';
 
 const loginSchema = z.object({
   phoneNumber: z.string().min(10, 'Nomor HP tidak valid'),
   pin: z.string().min(4).max(6, 'PIN harus 4-6 digit'),
+  deviceNumber: z.number().int().min(1).max(26).optional(),
 });
 
 export async function POST(request) {
@@ -21,7 +23,7 @@ export async function POST(request) {
       );
     }
 
-    const { phoneNumber, pin } = validation.data;
+    const { phoneNumber, pin, deviceNumber } = validation.data;
 
     const user = await prisma.user.findUnique({
       where: { phone: phoneNumber },
@@ -59,6 +61,30 @@ export async function POST(request) {
       },
     });
 
+    let mqttDevice = await prisma.userDevice.findUnique({
+      where: { userId: user.id },
+    });
+
+    if (deviceNumber) {
+      const creds = getDeviceCredentials(deviceNumber);
+      mqttDevice = await prisma.userDevice.upsert({
+        where: { userId: user.id },
+        update: {
+          deviceNumber,
+          deviceId: creds.deviceId,
+          username: creds.username,
+          password: creds.password,
+        },
+        create: {
+          userId: user.id,
+          deviceNumber,
+          deviceId: creds.deviceId,
+          username: creds.username,
+          password: creds.password,
+        },
+      });
+    }
+
     const response = NextResponse.json(
       {
         message: 'Login berhasil',
@@ -68,7 +94,10 @@ export async function POST(request) {
           phone: user.phone,
           rw: user.rw,
           role: user.role,
-          deviceId: user.deviceId,
+          deviceId: mqttDevice?.deviceId || null,
+          deviceNumber: mqttDevice?.deviceNumber || null,
+          username: mqttDevice?.username || null,
+          password: mqttDevice?.password || null,
         }
       },
       { status: 200 }

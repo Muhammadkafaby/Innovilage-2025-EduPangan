@@ -25,8 +25,15 @@ export async function GET(request) {
         role: true,
         kaderCode: true,
         gardenSize: true,
-        deviceId: true,
         createdAt: true,
+        mqttDevice: {
+          select: {
+            deviceId: true,
+            deviceNumber: true,
+            username: true,
+            password: true,
+          },
+        },
       },
     });
 
@@ -37,7 +44,15 @@ export async function GET(request) {
       );
     }
 
-    return NextResponse.json({ user });
+    return NextResponse.json({
+      user: {
+        ...user,
+        deviceId: user.mqttDevice?.deviceId || null,
+        deviceNumber: user.mqttDevice?.deviceNumber || null,
+        username: user.mqttDevice?.username || null,
+        password: user.mqttDevice?.password || null,
+      },
+    });
   } catch (error) {
     console.error('Me error:', error);
     return NextResponse.json(

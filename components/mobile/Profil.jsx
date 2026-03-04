@@ -179,7 +179,7 @@ const Profil = ({ user, onNavigateBack, onLogout, onNavigate, userId = 1 }) => {
                 {user?.name || 'Pengguna EduPangan'}
               </h2>
               <p className="text-sm text-gray-500">
-                RW {user?.rw || '01'} - Device {user?.deviceId || '-'}
+                RW {user?.rw || '01'} - Pengguna EduPangan
               </p>
               <div className="flex items-center mt-2">
                 <Badge variant="success" dot> Petani Aktif</Badge>

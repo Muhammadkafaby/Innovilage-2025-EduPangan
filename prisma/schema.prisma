@@ -16,7 +16,6 @@ model User {
   role          String          @default("peserta") @db.VarChar(20)
   kaderCode     String?         @db.VarChar(20)
   gardenSize    String?         @default("0m²") @db.VarChar(20)
-  deviceId      Int?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
@@ -26,6 +25,21 @@ model User {
   notifications Notification[]
   transactions  SeedTransaction[]
   sessions      Session[]
+  seedStockLogs StockUpdateLog[]
+  mqttDevice    UserDevice?
+}
+
+model UserDevice {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @unique
+  deviceNumber Int
+  deviceId     String   @db.VarChar(10)
+  username     String   @db.VarChar(100)
+  password     String   @db.VarChar(255)
+  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Session {
@@ -131,6 +145,22 @@ model Seed {
   updatedAt     DateTime @updatedAt
 
   transactions  SeedTransaction[]
+  stockLogs     StockUpdateLog[]
+}
+
+model StockUpdateLog {
+  id        Int      @id @default(autoincrement())
+  seedId     Int
+  userId     Int
+  oldStock   Int?
+  newStock   Int?
+  oldPrice   Int?
+  newPrice   Int?
+  note       String?  @db.VarChar(255)
+  createdAt  DateTime @default(now())
+
+  seed       Seed     @relation(fields: [seedId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model SeedTransaction {
