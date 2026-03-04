@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import SplashScreen from '../components/mobile/SplashScreen';
 import Login from '../components/mobile/Login';
-import Register from '../components/mobile/Register';
 import Dashboard from '../components/mobile/Dashboard';
 import BankBibit from '../components/mobile/BankBibit';
 import CatatPanen from '../components/mobile/CatatPanen';
@@ -26,17 +25,17 @@ export default function Home() {
   const { get } = useApi('/api');
 
   useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && sessionUser) {
       setUser(sessionUser);
     }
   }, [sessionUser, authLoading]);
 
   useEffect(() => {
     if (authLoading || currentPage === 'splash') return;
-    if (!sessionUser && !['login', 'register'].includes(currentPage)) {
+    if (!sessionUser && !user && currentPage !== 'login') {
       setCurrentPage('login');
     }
-  }, [authLoading, sessionUser, currentPage]);
+  }, [authLoading, sessionUser, user, currentPage]);
 
   useEffect(() => {
     const loadHarvests = async () => {
@@ -62,15 +61,14 @@ export default function Home() {
   };
 
   const handleLogin = (credentials) => {
+    if (credentials?.role === 'admin' || credentials?.role === 'kader') {
+      window.location.href = '/admin';
+      return;
+    }
+
     setUser(credentials);
     refreshUser();
     navigate('dashboard');
-  };
-
-  const handleRegister = (formData) => {
-    setUser(null);
-    alert('Pendaftaran berhasil. Silakan login untuk melanjutkan.');
-    navigate('login');
   };
 
   const handleOrder = () => {
@@ -116,14 +114,9 @@ export default function Home() {
         {currentPage === 'login' && (
           <Login
             onLogin={handleLogin}
-            onNavigateToRegister={() => navigate('register')}
-          />
-        )}
-
-        {currentPage === 'register' && (
-          <Register
-            onRegister={handleRegister}
-            onNavigateToLogin={() => navigate('login')}
+            onNavigateToAdmin={() => {
+              window.location.href = '/admin';
+            }}
           />
         )}
 
@@ -183,7 +176,7 @@ export default function Home() {
           />
         )}
 
-        {currentPage !== 'splash' && currentPage !== 'login' && currentPage !== 'register' && (
+        {currentPage !== 'splash' && currentPage !== 'login' && (
           <AiFabChat mode="user" userName={user?.name} bottomOffsetClass="bottom-24" />
         )}
       </div>

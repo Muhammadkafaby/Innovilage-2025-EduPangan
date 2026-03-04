@@ -2,15 +2,14 @@
 
 import React, { useState } from 'react';
 import Icon from '../shared/Icon';
-import { getDeviceOptions, getDeviceCredentials } from '../../lib/mqttConfig';
+import { getDeviceOptions } from '../../lib/mqttConfig';
 
-const Login = ({ onLogin, onNavigateToRegister }) => {
+const Login = ({ onLogin, onNavigateToAdmin }) => {
   const [selectedDevice, setSelectedDevice] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [pin, setPin] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [loginMode, setLoginMode] = useState('credentials');
 
   const deviceOptions = getDeviceOptions();
 
@@ -18,81 +17,51 @@ const Login = ({ onLogin, onNavigateToRegister }) => {
     e.preventDefault();
     setError('');
 
-    if (loginMode === 'credentials') {
-      if (!phoneNumber.trim()) {
-        setError('Masukkan nomor HP Anda');
-        return;
+    if (!phoneNumber.trim()) {
+      setError('Masukkan nomor HP Anda');
+      return;
+    }
+
+    if (!pin.trim()) {
+      setError('Masukkan PIN Anda');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phoneNumber: phoneNumber.trim(),
+          pin: pin.trim(),
+          ...(selectedDevice ? { deviceNumber: parseInt(selectedDevice, 10) } : {}),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Login gagal');
       }
 
-      if (!pin.trim()) {
-        setError('Masukkan PIN Anda');
-        return;
-      }
-
-      setIsLoading(true);
-
-      try {
-        const response = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            phoneNumber: phoneNumber.trim(),
-            pin: pin.trim(),
-            ...(selectedDevice ? { deviceNumber: parseInt(selectedDevice, 10) } : {}),
-          }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Login gagal');
-        }
-
-        const credentials = selectedDevice ? getDeviceCredentials(parseInt(selectedDevice)) : null;
-
-        onLogin && onLogin({
-          id: data.user.id,
-          name: data.user.name,
-          phone: data.user.phone,
-          rw: data.user.rw,
-          role: data.user.role,
-          deviceId: credentials?.deviceId || null,
-          deviceNumber: selectedDevice ? parseInt(selectedDevice) : null,
-          username: credentials?.username || null,
-          password: credentials?.password || null,
-        });
-      } catch (err) {
-        setError(err.message || 'Terjadi kesalahan');
-        setIsLoading(false);
-      }
-    } else {
-      if (!selectedDevice) {
-        setError('Pilih device terlebih dahulu');
-        return;
-      }
-
-      if (!phoneNumber.trim()) {
-        setError('Masukkan nama Anda');
-        return;
-      }
-
-      setIsLoading(true);
-
-      const credentials = getDeviceCredentials(parseInt(selectedDevice));
-
-      setTimeout(() => {
-        setIsLoading(false);
-        onLogin && onLogin({
-          name: phoneNumber.trim(),
-          deviceNumber: parseInt(selectedDevice),
-          deviceId: credentials.deviceId,
-          username: credentials.username,
-          password: credentials.password,
-          rw: '01',
-        });
-      }, 1000);
+      onLogin && onLogin({
+        id: data.user.id,
+        name: data.user.name,
+        phone: data.user.phone,
+        rw: data.user.rw,
+        role: data.user.role,
+        deviceId: data.user.deviceId,
+        deviceNumber: data.user.deviceNumber,
+        username: data.user.username,
+        password: data.user.password,
+      });
+    } catch (err) {
+      setError(err.message || 'Terjadi kesalahan');
+      setIsLoading(false);
     }
   };
 
@@ -112,103 +81,49 @@ const Login = ({ onLogin, onNavigateToRegister }) => {
         </div>
 
         <div className="neo-card p-6 max-w-md mx-auto w-full border border-white/45">
-          <div className="flex mb-4 rounded-xl overflow-hidden border border-gray-200">
-            <button
-              type="button"
-              onClick={() => setLoginMode('credentials')}
-              className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                loginMode === 'credentials'
-                  ? 'bg-green-500 text-white'
-                  : 'bg-gray-100 text-gray-600'
-              }`}
-            >
-              Login User
-            </button>
-            <button
-              type="button"
-              onClick={() => setLoginMode('device')}
-              className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                loginMode === 'device'
-                  ? 'bg-green-500 text-white'
-                  : 'bg-gray-100 text-gray-600'
-              }`}
-            >
-              Demo Device
-            </button>
-          </div>
-
           <div className="mb-5 p-3 rounded-2xl bg-white/35 border border-white/40">
-            <p className="text-xs text-gray-600">
-              {loginMode === 'credentials'
-                ? 'Masuk dengan nomor HP dan PIN yang terdaftar.'
-                : 'Pilih device aktif untuk melihat kelembapan tanah dan kontrol pompa secara real-time.'}
-            </p>
+            <p className="text-xs text-gray-600">Masuk dengan nomor HP dan PIN yang terdaftar.</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-5">
-            {loginMode === 'device' && (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Nama Anda
-                </label>
-                <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                    <Icon name="user" size={20} />
-                  </div>
-                  <input
-                    type="text"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="Contoh: Ibu Siti Aminah"
-                    className="w-full pl-12 pr-4 py-3.5 neo-input text-gray-800 placeholder-gray-400"
-                    required
-                  />
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Nomor HP
+              </label>
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Icon name="phone" size={20} />
                 </div>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                  placeholder="081234567890"
+                  maxLength={13}
+                  className="w-full pl-12 pr-4 py-3.5 neo-input text-gray-800 placeholder-gray-400"
+                  required
+                />
               </div>
-            )}
+            </div>
 
-            {loginMode === 'credentials' && (
-              <>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Nomor HP
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                      <Icon name="phone" size={20} />
-                    </div>
-                    <input
-                      type="tel"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
-                      placeholder="081234567890"
-                      maxLength={13}
-                      className="w-full pl-12 pr-4 py-3.5 neo-input text-gray-800 placeholder-gray-400"
-                      required
-                    />
-                  </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                PIN
+              </label>
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Icon name="lock" size={20} />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    PIN
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                      <Icon name="lock" size={20} />
-                    </div>
-                    <input
-                      type="password"
-                      value={pin}
-                      onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-                      placeholder="4-6 digit"
-                      maxLength={6}
-                      className="w-full pl-12 pr-4 py-3.5 neo-input text-gray-800 placeholder-gray-400 tracking-widest"
-                      required
-                    />
-                  </div>
-                </div>
-              </>
-            )}
+                <input
+                  type="password"
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                  placeholder="4-6 digit"
+                  maxLength={6}
+                  className="w-full pl-12 pr-4 py-3.5 neo-input text-gray-800 placeholder-gray-400 tracking-widest"
+                  required
+                />
+              </div>
+            </div>
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -291,13 +206,13 @@ const Login = ({ onLogin, onNavigateToRegister }) => {
         </div>
 
         <div className="mt-8 text-center">
-          <p className="text-sm text-gray-500">
-            Belum punya akun?{' '}
+          <p className="text-xs text-gray-400 mt-3">
+            Admin/Kader?{' '}
             <button
-              onClick={onNavigateToRegister}
-              className="text-green-500 font-semibold hover:text-green-600"
+              onClick={onNavigateToAdmin}
+              className="text-blue-500 font-semibold hover:text-blue-600"
             >
-              Daftar di sini
+              Login Admin
             </button>
           </p>
         </div>

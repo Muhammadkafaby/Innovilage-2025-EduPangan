@@ -7,9 +7,13 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
     const userId = searchParams.get('userId');
+    const includeArchived = searchParams.get('includeArchived') === 'true';
+
+    const seedWhere = includeArchived ? {} : { isActive: true };
 
     if (type === 'seeds' || type === 'stock') {
       const seeds = await prisma.seed.findMany({
+        where: seedWhere,
         orderBy: { name: 'asc' },
       });
       return NextResponse.json(seeds);
@@ -66,6 +70,7 @@ export async function GET(request) {
     }
 
     const seeds = await prisma.seed.findMany({
+      where: seedWhere,
       orderBy: { name: 'asc' },
     });
     return NextResponse.json(seeds);
@@ -167,6 +172,13 @@ export async function POST(request) {
         );
       }
 
+      if (!seed.isActive) {
+        return NextResponse.json(
+          { error: 'Bibit sudah diarsipkan dan tidak bisa dipesan' },
+          { status: 400 }
+        );
+      }
+
       if (seed.stockAvailable < quantity) {
         return NextResponse.json(
           { error: 'Stok tidak mencukupi' },
@@ -210,6 +222,13 @@ export async function POST(request) {
         return NextResponse.json(
           { error: 'Bibit tidak ditemukan' },
           { status: 404 }
+        );
+      }
+
+      if (!seed.isActive) {
+        return NextResponse.json(
+          { error: 'Bibit sudah diarsipkan dan tidak bisa diproses' },
+          { status: 400 }
         );
       }
 
@@ -336,6 +355,64 @@ export async function PUT(request) {
     }
 
     console.error('Seeds PUT error:', error);
+    return NextResponse.json(
+      { error: 'Terjadi kesalahan server' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    const auth = await getAuthUser(request);
+    if (!auth) {
+      return NextResponse.json({ error: 'Belum login' }, { status: 401 });
+    }
+
+    if (auth.role !== 'admin' && auth.role !== 'kader') {
+      return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const seedId = parseInt(searchParams.get('seedId') || '', 10);
+
+    if (Number.isNaN(seedId)) {
+      return NextResponse.json({ error: 'seedId tidak valid' }, { status: 400 });
+    }
+
+    const seed = await prisma.seed.findUnique({
+      where: { id: seedId },
+      select: { id: true, name: true, stockAvailable: true, price: true },
+    });
+
+    if (!seed) {
+      return NextResponse.json({ error: 'Bibit tidak ditemukan' }, { status: 404 });
+    }
+
+    await prisma.$transaction([
+      prisma.stockUpdateLog.create({
+        data: {
+          seedId: seed.id,
+          userId: auth.id,
+          oldStock: seed.stockAvailable,
+          newStock: 0,
+          oldPrice: seed.price,
+          newPrice: 0,
+          note: `Arsipkan jenis bibit: ${seed.name}`,
+        },
+      }),
+      prisma.seed.update({
+        where: { id: seedId },
+        data: {
+          isActive: false,
+          archivedAt: new Date(),
+        },
+      }),
+    ]);
+
+    return NextResponse.json({ message: 'Jenis bibit berhasil diarsipkan' });
+  } catch (error) {
+    console.error('Seeds DELETE error:', error);
     return NextResponse.json(
       { error: 'Terjadi kesalahan server' },
       { status: 500 }

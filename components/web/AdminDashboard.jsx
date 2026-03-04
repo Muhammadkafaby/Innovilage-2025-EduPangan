@@ -23,6 +23,7 @@ const AdminDashboard = ({ adminUser, onLogout }) => {
   const [seedLoading, setSeedLoading] = useState(false);
   const [seedError, setSeedError] = useState('');
   const [savingSeedId, setSavingSeedId] = useState(null);
+  const [deletingSeedId, setDeletingSeedId] = useState(null);
   const [creatingSeed, setCreatingSeed] = useState(false);
   const [newSeed, setNewSeed] = useState({
     name: '',
@@ -323,6 +324,27 @@ const AdminDashboard = ({ adminUser, onLogout }) => {
       setSeedError(error.message || 'Gagal menyimpan perubahan stok bibit');
     } finally {
       setSavingSeedId(null);
+    }
+  };
+
+  const handleDeleteSeed = async (seed) => {
+    const ok = confirm(`Arsipkan jenis bibit "${seed.name}"?`);
+    if (!ok) return;
+
+    setDeletingSeedId(seed.id);
+    setSeedError('');
+    try {
+      await del(`/seeds?seedId=${seed.id}`);
+      setSeedStocks((prev) => prev.filter((item) => item.id !== seed.id));
+      setSelectedSeedIds((prev) => prev.filter((id) => id !== seed.id));
+      setCommandFeedback({
+        type: 'success',
+        message: `Jenis bibit ${seed.name} berhasil diarsipkan`,
+      });
+    } catch (error) {
+      setSeedError(error.message || 'Gagal mengarsipkan jenis bibit');
+    } finally {
+      setDeletingSeedId(null);
     }
   };
 
@@ -1341,6 +1363,14 @@ const AdminDashboard = ({ adminUser, onLogout }) => {
                             className="w-full bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg py-2 text-sm font-semibold disabled:opacity-60"
                           >
                             {savingSeedId === seed.id ? 'Menyimpan...' : 'Simpan Perubahan'}
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteSeed(seed)}
+                            disabled={deletingSeedId === seed.id}
+                            className="w-full neo-button rounded-lg py-2 text-sm font-semibold text-red-600 border border-red-200 disabled:opacity-60"
+                          >
+                            {deletingSeedId === seed.id ? 'Mengarsipkan...' : 'Arsipkan Bibit'}
                           </button>
                         </div>
                       </div>
