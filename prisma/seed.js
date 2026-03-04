@@ -8,100 +8,85 @@ async function main() {
 
   const hashedPin = await bcrypt.hash('1234', 12);
 
-  const users = await Promise.all([
-    prisma.user.upsert({
-      where: { phone: '081234567890' },
-      update: {},
-      create: {
-        name: 'Ibu Siti Aminah',
-        phone: '081234567890',
-        rw: '02',
-        pin: hashedPin,
-        role: 'peserta',
-        kaderCode: 'PKK2025',
-        gardenSize: '15m²',
-      },
-    }),
-    prisma.user.upsert({
-      where: { phone: '081234567891' },
-      update: {},
-      create: {
-        name: 'Ibu Nurhasanah',
-        phone: '081234567891',
-        rw: '02',
-        pin: hashedPin,
-        role: 'peserta',
-        kaderCode: 'PKK2025',
-        gardenSize: '20m²',
-      },
-    }),
-    prisma.user.upsert({
-      where: { phone: '081234567892' },
-      update: {},
-      create: {
-        name: 'Ibu Aisyah',
-        phone: '081234567892',
-        rw: '03',
-        pin: hashedPin,
-        role: 'kader',
-        kaderCode: 'KADER001',
-        gardenSize: '25m²',
-      },
-    }),
+  const participantUsers = [
+    { name: 'NURUL FADHILLAH', phone: '082129243662' },
+    { name: 'NURNENGSIH', phone: '082128112350' },
+    { name: 'KARENI', phone: '081818917700' },
+    { name: 'ASIH PURWASIH', phone: '081573792526' },
+    { name: 'TINARTI', phone: '089505447981' },
+    { name: 'Nining nursini', phone: '085351650060' },
+    { name: 'Widiyawati', phone: '083125190942' },
+    { name: 'Sri mulyati', phone: '085903772838' },
+    { name: 'Sarnitem', phone: '082126440480' },
+    { name: 'Karni', phone: '081395386627' },
+    { name: "wati'ah", phone: '081947266351' },
+    { name: 'tarkinah', phone: '085211543682' },
+    { name: 'sumiyati', phone: '0895355274932' },
+    { name: 'castini', phone: '089528573507' },
+    { name: 'Darsini', phone: '085890074546' },
+    { name: 'Nurjanah', phone: '089636707224' },
+    { name: 'Sri kurnaeni', phone: '089664363583' },
+    { name: 'Dewi Ratna sari', phone: '089325843062' },
+    { name: 'Carinih', phone: '083172521051' },
+    { name: 'Tubah', phone: '0895630025496' },
+    { name: 'Carsini', phone: '081222069560' },
+    { name: 'Sartinah', phone: '081321128534' },
+    { name: 'hj.sun', phone: '081211047874' },
+    { name: 'Muhammad Kafaby', phone: '089529202742'},
+    { name: '(CEO Devstack) Davi Pramudya Putra', phone: '081214240287'},
+  ];
+
+  const adminPhones = new Set([
+    '089529202742',
+    '081214240287',
+    '082128112350',
   ]);
+
+  const users = await Promise.all(
+    participantUsers.map((participant, index) =>
+      prisma.user.upsert({
+        where: { phone: participant.phone },
+        update: {
+          name: participant.name,
+          pin: hashedPin,
+          role: adminPhones.has(participant.phone) ? 'admin' : 'peserta',
+          kaderCode: adminPhones.has(participant.phone) ? 'ADMIN001' : 'PKK2025',
+        },
+        create: {
+          name: participant.name,
+          phone: participant.phone,
+          rw: String(((index % 5) + 1)).padStart(2, '0'),
+          pin: hashedPin,
+          role: adminPhones.has(participant.phone) ? 'admin' : 'peserta',
+          kaderCode: adminPhones.has(participant.phone) ? 'ADMIN001' : 'PKK2025',
+          gardenSize: '10m²',
+        },
+      })
+    )
+  );
 
   console.log(`Created ${users.length} users`);
 
-  await prisma.userDevice.upsert({
-    where: { userId: users[0].id },
-    update: {
-      deviceNumber: 1,
-      deviceId: '001',
-      username: 'Telyuk_001',
-      password: 'Telyuk_001_Sukses',
-    },
-    create: {
-      userId: users[0].id,
-      deviceNumber: 1,
-      deviceId: '001',
-      username: 'Telyuk_001',
-      password: 'Telyuk_001_Sukses',
-    },
-  });
-
-  await prisma.userDevice.upsert({
-    where: { userId: users[1].id },
-    update: {
-      deviceNumber: 2,
-      deviceId: '002',
-      username: 'Telyuk_002',
-      password: 'Telyuk_002_Sukses',
-    },
-    create: {
-      userId: users[1].id,
-      deviceNumber: 2,
-      deviceId: '002',
-      username: 'Telyuk_002',
-      password: 'Telyuk_002_Sukses',
-    },
-  });
-
-  await prisma.userDevice.upsert({
-    where: { userId: users[2].id },
-    update: {
-      deviceNumber: 3,
-      deviceId: '003',
-      username: 'Telyuk_003',
-      password: 'Telyuk_003_Sukses',
-    },
-    create: {
-      userId: users[2].id,
-      deviceNumber: 3,
-      deviceId: '003',
-      username: 'Telyuk_003',
-      password: 'Telyuk_003_Sukses',
-    },
-  });
+  for (let i = 0; i < users.length; i += 1) {
+    const deviceNumber = i + 1;
+    const deviceId = String(deviceNumber).padStart(3, '0');
+    await prisma.userDevice.upsert({
+      where: { userId: users[i].id },
+      update: {
+        deviceNumber,
+        deviceId,
+        username: `Telyuk_${deviceId}`,
+        password: `Telyuk_${deviceId}_Sukses`,
+      },
+      create: {
+        userId: users[i].id,
+        deviceNumber,
+        deviceId,
+        username: `Telyuk_${deviceId}`,
+        password: `Telyuk_${deviceId}_Sukses`,
+      },
+    });
+  }
 
   const seeds = [
     { name: 'Kangkung', scientificName: 'Ipomoea aquatica', category: 'Sayuran Hijau', stockAvailable: 150, growthPeriod: '25-30 hari', waterNeeds: 'Tinggi', difficulty: 'Mudah', price: 500, nutritionFacts: { vitamin: 'A, C, K', mineral: 'Zat Besi, Kalsium', calories: '19 per 100g' }, tips: 'Cocok ditanam di area dengan air mengalir atau sistem hidroponik' },
