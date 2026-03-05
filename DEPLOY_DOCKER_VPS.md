@@ -43,12 +43,11 @@ sudo bash scripts/deploy-vps-nginx.sh --domain innovilage.devstacklabs.net --ema
 ```
 
 Service yang jalan:
-- `db` (MySQL custom image: `edupangan-mysql:8.0`)
+- `db` (MySQL 8)
 - `web` (Next.js + migrate deploy saat startup)
 - `worker` (AI scheduler artikel)
 
 Image yang akan dibuild:
-- `edupangan-mysql:8.0`
 - `edupangan-web` (via service `web`)
 - `edupangan-worker` (via service `worker`)
 
