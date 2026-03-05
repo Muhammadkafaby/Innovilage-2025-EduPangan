@@ -103,9 +103,10 @@ export async function POST(request) {
       { status: 200 }
     );
 
+    const isSecure = request.url.startsWith('https');
     response.cookies.set('auth_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecure,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7,
       path: '/',
