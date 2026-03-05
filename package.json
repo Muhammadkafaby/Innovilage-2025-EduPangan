@@ -15,7 +15,8 @@
     "db:seed": "node prisma/seed.js",
     "db:studio": "prisma studio",
     "ai:worker": "node scripts/ai-worker.js",
-    "ai:once": "node scripts/ai-worker.js --once"
+    "ai:once": "node scripts/ai-worker.js --once",
+    "deploy:vps": "bash scripts/deploy-vps-nginx.sh"
   },
   "keywords": [
     "edupangan",

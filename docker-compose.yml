@@ -1,0 +1,69 @@
+services:
+  db:
+    build:
+      context: .
+      dockerfile: docker/mysql/Dockerfile
+    image: edupangan-mysql:8.0
+    container_name: edupangan-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-edupangan}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: edupangan-web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      DATABASE_URL: ${DATABASE_URL_DOCKER:-mysql://root:root@db:3306/edupangan}
+      AUTH_SECRET: ${AUTH_SECRET}
+      BIZNETGIO_API_KEY: ${BIZNETGIO_API_KEY}
+      BIZNETGIO_MODEL: ${BIZNETGIO_MODEL:-openai/gpt-oss-20b}
+      AI_ARTICLE_INTERVAL_MS: ${AI_ARTICLE_INTERVAL_MS:-300000}
+      AI_WORKER_RETRY_COUNT: ${AI_WORKER_RETRY_COUNT:-1}
+      AI_WORKER_RETRY_DELAY_MS: ${AI_WORKER_RETRY_DELAY_MS:-4000}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    command: ["sh", "/app/docker/start-web.sh"]
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: edupangan-worker
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      web:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL_DOCKER:-mysql://root:root@db:3306/edupangan}
+      AUTH_SECRET: ${AUTH_SECRET}
+      BIZNETGIO_API_KEY: ${BIZNETGIO_API_KEY}
+      BIZNETGIO_MODEL: ${BIZNETGIO_MODEL:-openai/gpt-oss-20b}
+      AI_ARTICLE_INTERVAL_MS: ${AI_ARTICLE_INTERVAL_MS:-300000}
+      AI_WORKER_RETRY_COUNT: ${AI_WORKER_RETRY_COUNT:-1}
+      AI_WORKER_RETRY_DELAY_MS: ${AI_WORKER_RETRY_DELAY_MS:-4000}
+    command: ["sh", "/app/docker/start-worker.sh"]
+
+volumes:
+  mysql_data:
