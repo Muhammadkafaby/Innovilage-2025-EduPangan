@@ -84,6 +84,17 @@ if grep -q '^APP_PORT=' .env; then
 else
   echo "APP_PORT=\"${APP_PORT}\"" >> .env
 fi
+
+APP_URL_SCHEME="http"
+if [[ "$ENABLE_SSL" == "true" ]]; then
+  APP_URL_SCHEME="https"
+fi
+if grep -q '^NEXT_PUBLIC_APP_URL=' .env; then
+  sed -i "s|^NEXT_PUBLIC_APP_URL=.*|NEXT_PUBLIC_APP_URL=\"${APP_URL_SCHEME}://${DOMAIN}\"|" .env
+else
+  echo "NEXT_PUBLIC_APP_URL=\"${APP_URL_SCHEME}://${DOMAIN}\"" >> .env
+fi
+
 docker compose up -d --build
 
 echo "[2/5] Seed database (aman, upsert)..."

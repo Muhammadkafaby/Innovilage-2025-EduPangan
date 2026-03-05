@@ -33,7 +33,7 @@ services:
       NODE_ENV: production
       PORT: 3000
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
-      DATABASE_URL: ${DATABASE_URL_DOCKER:-mysql://root:root@db:3306/edupangan}
+      DATABASE_URL: ${DATABASE_URL_DOCKER:-mysql://root:${MYSQL_ROOT_PASSWORD:-root}@db:3306/${MYSQL_DATABASE:-edupangan}}
       AUTH_SECRET: ${AUTH_SECRET}
       BIZNETGIO_API_KEY: ${BIZNETGIO_API_KEY}
       BIZNETGIO_MODEL: ${BIZNETGIO_MODEL:-openai/gpt-oss-20b}
@@ -57,7 +57,7 @@ services:
         condition: service_started
     environment:
       NODE_ENV: production
-      DATABASE_URL: ${DATABASE_URL_DOCKER:-mysql://root:root@db:3306/edupangan}
+      DATABASE_URL: ${DATABASE_URL_DOCKER:-mysql://root:${MYSQL_ROOT_PASSWORD:-root}@db:3306/${MYSQL_DATABASE:-edupangan}}
       AUTH_SECRET: ${AUTH_SECRET}
       BIZNETGIO_API_KEY: ${BIZNETGIO_API_KEY}
       BIZNETGIO_MODEL: ${BIZNETGIO_MODEL:-openai/gpt-oss-20b}
